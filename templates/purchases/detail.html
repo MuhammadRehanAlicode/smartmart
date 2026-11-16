@@ -1,0 +1,20 @@
+{% extends "base_dashboard.html" %}
+{% block title %}PUR-{{ object.pk }}{% endblock %}
+{% block heading %}Purchase PUR-{{ object.pk }} — {{ object.get_status_display }}{% endblock %}
+{% block content %}
+<div class="card">
+  <p>Supplier: <a href="{% url 'suppliers:detail' object.supplier_id %}">{{ object.supplier }}</a> · Invoice: {{ object.invoice_reference|default:"—" }}</p>
+  <div class="overflow-x-auto my-4"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Product</th><th>Qty</th><th>Unit cost</th><th>Box cost</th><th>Line total</th></tr></thead>
+    <tbody>{% for i in object.items.all %}<tr class="border-t border-line"><td class="py-2">{{ i.product.name }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} <span class="help">({{ i.converted_quantity }} {{ i.base_unit_label }})</span></td><td>{{ CURRENCY }} {{ i.unit_cost }}</td><td>{{ CURRENCY }} {{ i.box_cost }}</td><td>{{ CURRENCY }} {{ i.line_total }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  <p>Total: <strong>{{ CURRENCY }} {{ object.total }}</strong> · Paid: {{ CURRENCY }} {{ object.amount_paid }} · Due: {{ CURRENCY }} {{ object.balance_due }}</p>
+  {% if object.status == "pending" %}
+  <div class="mt-4 flex flex-wrap gap-2">
+    <form method="post" action="{% url 'purchases:receive' object.pk %}" onsubmit="return confirm('Mark goods as received? Stock will increase.');">{% csrf_token %}<button class="btn btn-primary" type="submit">✔ Mark as received</button></form>
+    <a class="btn btn-outline" href="{% url 'purchases:edit' object.pk %}">Edit</a>
+    <form method="post" action="{% url 'purchases:cancel' object.pk %}" onsubmit="return confirm('Cancel this purchase?');">{% csrf_token %}<button class="btn btn-outline" type="submit">Cancel purchase</button></form>
+  </div>
+  {% elif object.received_at %}<p class="help mt-2">Received {{ object.received_at|date:"d M Y H:i" }}</p>{% endif %}
+</div>
+{% endblock %}

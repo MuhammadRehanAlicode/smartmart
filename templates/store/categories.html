@@ -1,0 +1,27 @@
+{% extends "base_store.html" %}
+{% load static store_extras %}
+{% block title %}Categories | {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-categories-page{% endblock %}
+{% block content %}
+<section id="categories" class="sm-categories-section" aria-labelledby="categories-heading">
+  <header class="sm-category-header">
+    <div class="sm-category-heading">
+      <span class="sm-category-pill"><svg class="sm-ic"><use href="#i-grid"/></svg>Shop by Category</span>
+      <h2 id="categories-heading">Browse Our <span>Categories</span></h2>
+      <p>Choose a category to find the products you need.</p>
+    </div>
+    <div class="sm-category-showcase" aria-hidden="true">
+      <img src="{% static 'img/store/category-showcase-groceries.webp' %}" alt="">
+    </div>
+  </header>
+
+  <div class="sm-category-grid">
+    {% for c in categories %}
+    <a class="sm-category-card" href="{% url 'store:category' c.slug %}" aria-label="Browse {{ c.name }}, {{ c.product_count }} products">
+      <div class="sm-category-card__image"><img src="{% static c|category_art %}" alt="" loading="lazy"></div>
+      <div class="sm-category-card__info"><div><h3>{{ c.name }}</h3><p>{{ c.product_count }} Product{{ c.product_count|pluralize }}</p></div><span class="sm-category-card__arrow"><svg class="sm-ic"><use href="#i-right"/></svg></span></div>
+    </a>
+    {% empty %}<p class="sm-empty">Categories will appear here once the store adds them.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

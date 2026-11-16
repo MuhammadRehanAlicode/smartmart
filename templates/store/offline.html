@@ -1,0 +1,15 @@
+{% extends "base_store.html" %}
+{% block title %}You are offline · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="card text-center" data-offline-page="fallback" style="max-width:36rem;margin:2rem auto">
+  <h1 class="text-2xl font-bold mb-3">You are offline</h1>
+  <p>We could not reach {{ STORE_NAME }} and this page has not been saved on your device yet.</p>
+  <p class="help mt-2">Products you have already viewed are still available. Anything you add to your cart or order now is kept safely on this device and sent when you are back online.</p>
+  <div class="flex flex-wrap gap-2 justify-center mt-4">
+    <a class="btn btn-primary" href="{% url 'store:products' %}">Browse saved products</a>
+    <a class="btn btn-outline" href="{% url 'store:cart' %}">My cart</a>
+    <a class="btn btn-outline" href="{% url 'store:orders' %}">My orders</a>
+    <button type="button" class="btn btn-outline" onclick="location.reload()">Try again</button>
+  </div>
+</div>
+{% endblock %}

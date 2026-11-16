@@ -1,0 +1,12 @@
+{% extends "base_store.html" %}
+{% block title %}Sign up · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto card">
+  <h1 class="text-2xl font-bold mb-4">Create your account</h1>
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "_form_fields.html" %}
+    <button class="btn btn-primary w-full" type="submit">Sign up</button>
+  </form>
+  <p class="help mt-4">Already registered? <a href="{% url 'accounts:login' %}">Log in</a></p>
+</div>
+{% endblock %}

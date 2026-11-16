@@ -1,0 +1,53 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>{% include "_head.html" %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=blue-theme-single-product-search-20261112"><title>{% block title %}Dashboard{% endblock %} · {{ STORE_NAME }}</title></head>
+<body class="admin-ui">
+<div class="ad-app">
+  <button id="sidebar-backdrop" class="ad-sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+  <aside id="sidebar" class="ad-sidebar" aria-label="Admin navigation">
+    <a class="ad-brand" href="{% url 'dashboard:home' %}" aria-label="{{ STORE_NAME }} dashboard home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M4 7h6l5 25h23l6-18H13"/><circle cx="19" cy="39" r="3"/><circle cx="36" cy="39" r="3"/><path d="M20 17h5v5h-5zm8-2h5v7h-5zM17 27h19"/></svg>
+      <span><b>{{ STORE_NAME }}</b><small>Freshness at Your Doorstep</small></span>
+    </a>
+    <div class="ad-sidebar-label">STORE MANAGEMENT</div>
+    <nav class="ad-sidebar-nav">
+      <a class="ad-nav-link {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'dashboard:home' %}"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Dashboard</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'products' and request.resolver_match.url_name != 'categories' %}is-active{% endif %}" href="{% url 'products:list' %}"><svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5zM3 7v10l9 5 9-5V7M12 12v10"/></svg><span>Products</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.url_name == 'categories' %}is-active{% endif %}" href="{% url 'products:categories' %}"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Categories</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'orders' %}is-active{% endif %}" href="{% url 'orders:list' %}"><svg viewBox="0 0 24 24"><path d="M3 3h2l2.5 12h11L21 7H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Online orders</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'sales' and request.resolver_match.url_name != 'pos' %}is-active{% endif %}" href="{% url 'sales:list' %}"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg><span>Sales</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'inventory' %}is-active{% endif %}" href="{% url 'inventory:alerts' %}"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5"/></svg><span>Inventory</span></a>
+      {% if user.is_owner %}
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'suppliers' %}is-active{% endif %}" href="{% url 'suppliers:list' %}"><svg viewBox="0 0 24 24"><path d="M3 7h11v11H3zM14 11h4l3 3v4h-7"/><circle cx="7" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg><span>Suppliers</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'reports' %}is-active{% endif %}" href="{% url 'reports:index' %}"><svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-8M22 20V3"/></svg><span>Reports</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'expenses' %}is-active{% endif %}" href="{% url 'expenses:list' %}"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 9h8M8 13h5M8 17h3"/></svg><span>Expenses</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'purchases' %}is-active{% endif %}" href="{% url 'purchases:list' %}"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg><span>Purchases</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.namespace == 'store_banners' %}is-active{% endif %}" href="{% url 'store_banners:manage' %}"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></svg><span>Hero banners</span></a>
+      <a class="ad-nav-link {% if 'staff' in request.resolver_match.url_name %}is-active{% endif %}" href="{% url 'dashboard:staff-list' %}"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M17 5a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 5"/></svg><span>Staff accounts</span></a>
+      {% endif %}
+      <a class="ad-nav-link" href="{% url 'sales:pos' %}"><svg viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V4h8v3M8 12h8M8 16h5"/></svg><span>New sale</span></a>
+    </nav>
+    <div class="ad-sidebar-bottom">
+      <a class="ad-store-link" href="{% url 'store:home' %}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h14V10M9 20v-6h6v6"/></svg>View storefront</a>
+      <div class="ad-sidebar-user"><span class="ad-avatar">{% firstof user.first_name|first user.username|first "A" %}</span><span><b>{{ user.get_full_name|default:user.username }}</b><small>{{ user.get_role_display }}</small></span></div>
+    </div>
+  </aside>
+
+  <div class="ad-main-shell">
+    <header class="ad-topbar">
+      <button id="sidebar-toggle" class="ad-menu-toggle" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <form class="ad-search" method="get" action="{% url 'dashboard:search' %}" role="search"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><input type="search" name="q" placeholder="Search products, orders, customers..." aria-label="Search products, orders, and customers"></form>
+      <a class="ad-notification" href="{% url 'inventory:alerts' %}" aria-label="View stock alerts"><svg viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a>
+      <details class="ad-profile-menu"><summary><span class="ad-avatar">{% firstof user.first_name|first user.username|first "A" %}</span><span class="ad-profile-name"><b>{{ user.get_full_name|default:user.username }}</b><small>{{ user.get_role_display }}</small></span><svg class="ad-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></summary><div class="ad-profile-dropdown"><span>{{ user.username }}</span><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form></div></details>
+    </header>
+    <main class="ad-main-content">
+      <div class="ad-page-heading"><div class="ad-breadcrumb"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6"/></svg><span>›</span><span>{% block breadcrumb %}{{ request.resolver_match.app_name|default:"Dashboard" }}{% endblock %}</span></div><h1>{% block heading %}Dashboard{% endblock %}</h1>{% block page_subtitle %}{% endblock %}</div>
+      {% include "_messages.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+<script src="{% static 'js/sidebar.js' %}" defer></script>
+</body>
+</html>

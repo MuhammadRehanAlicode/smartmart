@@ -1,0 +1,46 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block heading %}{{ title }}{% endblock %}
+{% block content %}
+<form class="card max-w-4xl" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  {% include "_form_fields.html" %}
+  <section class="mt-6 border-t border-line pt-4">
+    <h2 class="text-lg font-bold">Purchase and sales units</h2>
+    <p class="help mb-3">The base unit is the inventory unit. Each conversion is product-specific; for example, 1 carton = 12 pieces.</p>
+    {{ unit_formset.management_form }}
+    {% if unit_formset.non_form_errors %}<p class="field-error">{{ unit_formset.non_form_errors }}</p>{% endif %}
+    <div class="grid gap-2 md:grid-cols-12 help font-semibold"><span class="md:col-span-2">Unit</span><span class="md:col-span-2">Base units per unit</span><span class="md:col-span-2">Purchase in this unit</span><span class="md:col-span-2">Sell in this unit</span><span class="md:col-span-3">Selling price</span></div>
+    <div class="grid gap-3">{% for f in unit_formset %}
+      <div class="grid gap-2 md:grid-cols-12 items-center border-t border-line pt-2" data-unit-row {% if f.instance.unit_code == unit_formset.instance.base_unit or not unit_formset.instance.pk and forloop.first %}data-base-unit-row{% endif %}>
+        {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+        <div class="md:col-span-2">{{ f.unit_code }}{% for e in f.unit_code.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+        <div class="md:col-span-2">{{ f.conversion_factor }}{% for e in f.conversion_factor.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+        <div class="md:col-span-2">{{ f.purchase_enabled }}</div>
+        <div class="md:col-span-2">{{ f.sales_enabled }}</div>
+        <div class="md:col-span-3">{{ f.selling_price }}{% for e in f.selling_price.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+        <div class="md:col-span-1">{% if f.DELETE %}<label class="help">{{ f.DELETE }} Remove</label>{% endif %}</div>
+        {% for e in f.non_field_errors %}<p class="field-error md:col-span-12">{{ e }}</p>{% endfor %}
+      </div>
+    {% endfor %}</div>
+  </section>
+  <div class="mt-6 flex gap-2"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline" href="{{ back_url }}">Cancel</a></div>
+</form>
+<script>
+  (() => {
+    const base = document.getElementById("id_base_unit");
+    const row = document.querySelector("[data-base-unit-row]");
+    if (!base || !row) return;
+    base.addEventListener("change", () => {
+      const code = row.querySelector('select[name$="-unit_code"]');
+      if (code) code.value = base.value;
+      const factor = row.querySelector('input[name$="-conversion_factor"]');
+      if (factor) factor.value = "1";
+      ["purchase_enabled", "sales_enabled"].forEach((name) => {
+        const checkbox = row.querySelector('input[name$="-' + name + '"]');
+        if (checkbox) checkbox.checked = true;
+      });
+    });
+  })();
+</script>
+{% endblock %}

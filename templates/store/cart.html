@@ -1,0 +1,50 @@
+{% extends "base_store.html" %}
+{% load static store_extras %}
+{% block title %}Your cart · {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-page sm-cart-page{% endblock %}
+{% block content %}
+<section class="sm-cart-heading" aria-labelledby="cart-title">
+  <div><span class="sm-cart-eyebrow"><svg class="sm-ic"><use href="#i-leaf"/></svg>Fresh picks, ready for you</span><h1 id="cart-title">Your Shopping Cart</h1><p>Review your items and make any changes before checkout.</p></div>
+  <a class="sm-cart-continue" href="{% url 'store:products' %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7"/></svg>Continue shopping</a>
+</section>
+
+{% if items %}
+<div class="sm-cart-layout">
+  <section class="sm-cart-items" aria-label="Items in your cart">
+    <div class="sm-cart-items-head"><div><h2>Cart items</h2><span>{{ CART_COUNT }} item{{ CART_COUNT|pluralize }}</span></div><span class="sm-cart-head-note">Price</span></div>
+    {% if problems %}<div class="sm-cart-alert" role="alert"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><span>Some items need attention because stock is limited or unavailable. Update or remove them before checkout.</span></div>{% endif %}
+    {% for i in items %}
+    <article class="sm-cart-item {% if i.quantity > i.product.stock_quantity or not i.product.is_online or i.product.is_archived or i.product.category_id and not i.product.category.is_active %}has-problem{% endif %}" data-cart-item="{{ i.pk }}" data-product-id="{{ i.product_id }}">
+      <a class="sm-cart-product-image" href="{% url 'store:product' i.product.pk %}" aria-label="View {{ i.product.name }}">
+        {% if i.product.image %}<img src="{{ i.product.image.url }}" alt="{{ i.product.name }}" loading="lazy">{% else %}<img src="{{ i.product|product_art_url }}" alt="{{ i.product.name }}" loading="lazy">{% endif %}
+      </a>
+      <div class="sm-cart-product-info">
+        <a class="sm-cart-product-name" href="{% url 'store:product' i.product.pk %}">{{ i.product.name }}</a>
+        <span class="sm-cart-unit-price">{{ CURRENCY }} {{ i.product.discounted_price|floatformat:"-2g" }} <small>each</small></span>
+        {% if i.quantity > i.product.stock_quantity or not i.product.is_online or i.product.is_archived or i.product.category_id and not i.product.category.is_active %}<span class="sm-cart-stock-warning">{% if i.product.stock_quantity == 0 or not i.product.is_online or i.product.is_archived or i.product.category_id and not i.product.category.is_active %}Currently unavailable{% else %}Only {{ i.product.stock_quantity }} in stock{% endif %}</span>{% elif i.product.stock_quantity <= 5 %}<span class="sm-cart-stock-low">Only {{ i.product.stock_quantity }} left</span>{% endif %}
+        <div class="sm-cart-mobile-total">Line total <strong>{{ CURRENCY }} {{ i.line_total|floatformat:"-2g" }}</strong></div>
+      </div>
+      <div class="sm-cart-controls">
+        <form method="post" action="{% url 'store:cart-update' %}" class="sm-cart-quantity-form" data-cart-update-form>{% csrf_token %}<input type="hidden" name="item_id" value="{{ i.pk }}">
+          <label for="q{{ i.pk }}">Quantity</label><div class="sm-cart-quantity-control"><button type="button" data-qty-step="-1" aria-label="Decrease quantity of {{ i.product.name }}">−</button><input id="q{{ i.pk }}" type="number" name="quantity" min="0" max="{{ i.product.stock_quantity }}" value="{{ i.quantity }}" inputmode="numeric" aria-label="Quantity of {{ i.product.name }}"><button type="button" data-qty-step="1" aria-label="Increase quantity of {{ i.product.name }}">+</button></div><button class="sm-cart-update" type="submit">Update</button>
+        </form>
+      </div>
+      <strong class="sm-cart-line-total">{{ CURRENCY }} {{ i.line_total|floatformat:"-2g" }}</strong>
+      <form method="post" action="{% url 'store:cart-update' %}" class="sm-cart-remove-form">{% csrf_token %}<input type="hidden" name="item_id" value="{{ i.pk }}"><input type="hidden" name="quantity" value="0"><button type="submit" aria-label="Remove {{ i.product.name }} from cart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg><span>Remove</span></button></form>
+    </article>
+    {% endfor %}
+    <div class="sm-cart-bottom-link"><svg class="sm-ic"><use href="#i-refresh"/></svg>Need something else? <a href="{% url 'store:products' %}">Keep browsing</a><span class="sm-cart-update-status" data-cart-update-status role="status" aria-live="polite"></span></div>
+  </section>
+
+  <aside class="sm-cart-summary" aria-labelledby="cart-summary-title">
+    <div class="sm-cart-summary-title"><i><svg class="sm-ic"><use href="#i-cart"/></svg></i><h2 id="cart-summary-title">Order Summary</h2></div>
+    {% include "store/_totals.html" %}
+    {% if problems %}<button type="button" class="sm-cart-checkout is-disabled" data-cart-checkout data-checkout-url="{% url 'store:checkout' %}" disabled aria-describedby="cart-stock-message">Review item quantities</button><p id="cart-stock-message" class="sm-cart-checkout-note">Checkout is available after stock issues are resolved.</p>
+    {% else %}<a class="sm-cart-checkout" data-cart-checkout href="{% url 'store:checkout' %}">Proceed to Checkout <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a><p class="sm-cart-checkout-note">Secure checkout · Cash on delivery</p>{% endif %}
+    <div class="sm-cart-assurances"><div><i><svg class="sm-ic"><use href="#i-shield"/></svg></i><span><b>Secure shopping</b><small>Your order details are protected</small></span></div><div><i><svg class="sm-ic"><use href="#i-truck"/></svg></i><span><b>Fresh to your door</b><small>Delivery calculated at checkout</small></span></div><div><i><svg class="sm-ic"><use href="#i-refresh"/></svg></i><span><b>Need help?</b><small><a href="{% url 'store:contact' %}">Contact our support team</a></small></span></div></div>
+  </aside>
+</div>
+{% else %}
+<section class="sm-cart-empty" aria-labelledby="empty-cart-title"><div class="sm-cart-empty-icon"><svg class="sm-ic"><use href="#i-cart"/></svg></div><span class="sm-cart-eyebrow">A little room for something fresh</span><h2 id="empty-cart-title">Your cart is waiting</h2><p>Explore fresh groceries and everyday essentials, then add your favorites here.</p><a href="{% url 'store:products' %}" class="sm-cart-checkout">Browse products <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></a></section>
+{% endif %}
+{% endblock %}

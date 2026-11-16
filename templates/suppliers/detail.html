@@ -1,0 +1,13 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block heading %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <p>{{ object.phone|default:"No phone" }} · {{ object.address|default:"No address" }}</p>
+  <p class="mt-2">Balance owed: <strong>{{ CURRENCY }} {{ object.balance }}</strong> <span class="help">(received purchases minus payments)</span></p>
+  <div class="mt-3 flex gap-2"><a class="btn btn-primary" href="{% url 'suppliers:edit' object.pk %}">Edit</a><a class="btn btn-outline" href="{% url 'purchases:create' %}">New purchase</a></div>
+</div>
+<div class="card"><h2 class="text-lg font-bold mb-2">Purchases</h2>
+  {% for p in purchases %}<p class="py-1 border-t border-line"><a href="{% url 'purchases:detail' p.pk %}">PUR-{{ p.pk }}</a> · {{ p.get_status_display }} · {{ CURRENCY }} {{ p.total }}</p>{% empty %}<p class="help">No purchases yet.</p>{% endfor %}
+</div>
+{% endblock %}

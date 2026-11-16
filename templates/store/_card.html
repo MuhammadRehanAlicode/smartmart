@@ -1,0 +1,25 @@
+{% load static store_extras %}
+<article class="sm-card">
+  {% if p.discount_percent %}<span class="sm-card__off">-{{ p.discount_percent|floatformat:"-2" }}%</span>{% endif %}
+  <button type="button" class="sm-heart" data-wish="{{ p.pk }}" aria-pressed="false" aria-label="Save {{ p.name }} to wishlist"><svg class="sm-ic"><use href="#i-heart"/></svg></button>
+  <a href="{% url 'store:product' p.pk %}" class="sm-card__img" aria-label="{{ p.name }}">
+    {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">
+    {% elif featured_card %}
+      {% with featured_art=p|featured_product_art %}
+        {% if featured_art %}<img src="{{ featured_art }}" alt="{{ p.name }}" loading="lazy">
+        {% else %}<img src="{{ p|product_art_url }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+      {% endwith %}
+    {% else %}<img src="{{ p|product_art_url }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+  </a>
+  <h3><a href="{% url 'store:product' p.pk %}">{{ p.name }}</a></h3>
+  <p class="sm-card__stock {% if p.is_out_of_stock %}out{% elif p.is_low_stock %}low{% endif %}">{% if p.is_out_of_stock %}Out of stock{% elif p.is_low_stock %}Only {{ p.stock_quantity }} left{% else %}In stock{% endif %}</p>
+  <div class="sm-price">{{ CURRENCY }} {{ p.discounted_price|floatformat:"-2g" }}{% if p.discount_percent %}<s>{{ CURRENCY }} {{ p.selling_price|floatformat:"-2g" }}</s>{% endif %}</div>
+  {% if p.is_out_of_stock %}<button class="sm-addbtn" type="button" disabled>Out of stock</button>
+  {% elif user.is_authenticated and user.is_store_staff and not user.is_owner %}<a class="sm-addbtn" href="{% url 'store:product' p.pk %}">View</a>
+  {% else %}
+  <form method="post" action="{% url 'store:cart-add' %}" class="js-add-form" data-product-name="{{ p.name }}" data-price="{{ p.discounted_price }}" data-list-price="{{ p.selling_price }}" data-stock="{{ p.stock_quantity }}" data-sku="{{ p.sku }}" data-image="{% if p.image %}{{ p.image.url }}{% else %}{{ p|product_art_url }}{% endif %}">{% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ p.pk }}"><input type="hidden" name="quantity" value="1"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="sm-addbtn" type="submit"><svg class="sm-ic"><use href="#i-cart"/></svg>Add to Cart</button>
+  </form>
+  {% endif %}
+</article>

@@ -1,0 +1,10 @@
+{% load static %}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% if USE_TAILWIND_CDN %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:"#155BB8",canvas:"#F4F8FF",accent:"#38A9F2",ink:"#172B47",muted:"#65768D",line:"#DBE6F5"}}}}</script>
+{% else %}
+<link rel="stylesheet" href="{% static 'dist/output.css' %}">
+{% endif %}
+<link rel="stylesheet" href="{% static 'css/components.css' %}?v=blue-theme-20261112">

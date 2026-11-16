@@ -1,0 +1,81 @@
+{% load static store_extras %}<!doctype html>
+<html lang="en">
+<head>{% include "_head.html" %}<link rel="manifest" href="{% url 'store:manifest' %}"><meta name="theme-color" content="#082b60"><link rel="apple-touch-icon" href="{% static 'img/pwa/apple-touch-icon.png' %}"><meta name="csrf-token" content="{{ csrf_token }}"><link rel="stylesheet" href="{% static 'css/storefront.css' %}?v=blue-theme-20261112"><title>{% block title %}{{ STORE_NAME }}{% endblock %}</title></head>
+<body class="store min-h-screen" data-pending-clear-url="{% url 'store:pending-clear' %}" data-login-url="{% url 'accounts:sign-in' %}" data-delivery-fee="{{ DELIVERY_FEE }}" data-free-delivery="{{ FREE_DELIVERY_THRESHOLD }}" data-currency="{{ CURRENCY }}"{% if user.is_authenticated %} data-user-id="{{ user.pk }}" data-user-role="{{ user.role }}"{% endif %}>
+{% include "store/_icons.html" %}
+<a href="#main" class="sm-sr" onfocus="this.style.cssText='position:fixed;left:8px;top:8px;width:auto;height:auto;clip:auto;background:#fff;padding:8px;z-index:200'">Skip to content</a>
+{% nav_categories as nav_cats %}
+<header class="sm-header">
+  <div class="sm-container sm-top">
+    <a class="sm-logo" href="{% url 'store:home' %}" aria-label="{{ STORE_NAME }} home">
+      <svg class="sm-ic"><use href="#i-cart"/></svg>
+      <span><b>{{ STORE_NAME }}</b><small>Freshness at Your Doorstep</small></span>
+    </a>
+    <form class="sm-search" method="get" action="{% url 'store:search' %}" role="search">
+      <input type="search" name="q" value="{{ q|default:'' }}" placeholder="Search for products, brands and more..." aria-label="Search products">
+      <button type="submit" aria-label="Search"><svg class="sm-ic"><use href="#i-search"/></svg></button>
+    </form>
+    <div class="sm-actions">
+      <a class="sm-conn" href="{% url 'store:orders' %}" data-conn-status hidden role="status" aria-live="polite"></a>
+      <span class="sm-act sm-deliver"><svg class="sm-ic"><use href="#i-pin"/></svg><span>Deliver to<strong>Lahore</strong></span></span>
+      <span class="sm-sep" aria-hidden="true"></span>
+      {% if user.is_authenticated %}
+        <details class="sm-user">
+          <summary class="sm-act"><svg class="sm-ic"><use href="#i-user"/></svg><span class="sm-login-label" data-sm-private="name">{{ user.first_name|default:user.username }}</span></summary>
+          <div class="sm-user-menu">
+            {% if user.is_customer %}<a href="{% url 'store:orders' %}">My orders</a><a href="{% url 'store:profile' %}">Profile</a>
+            {% else %}<a href="{% url 'dashboard:home' %}">Dashboard</a>{% endif %}
+            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Log out</button></form>
+          </div>
+        </details>
+      {% else %}
+        <a class="sm-act" href="{% url 'accounts:sign-in' %}" data-auth-open="login"><svg class="sm-ic"><use href="#i-user"/></svg><span class="sm-login-label">Login / Sign Up</span></a>
+      {% endif %}
+      <button type="button" class="sm-act" data-wishlist-open aria-label="Wishlist"><svg class="sm-ic"><use href="#i-heart"/></svg></button>
+      {% if user.is_authenticated and not user.is_customer %}{% else %}
+      <a class="sm-act" href="{% url 'store:cart' %}" {% if not user.is_authenticated %}data-auth-open="login"{% endif %} aria-label="Cart"><svg class="sm-ic"><use href="#i-cart"/></svg><span class="sm-badge" data-cart-count>{{ CART_COUNT }}</span><span class="sm-login-label">Cart</span></a>
+      {% endif %}
+    </div>
+  </div>
+  {% with view=request.resolver_match.view_name %}
+  <nav class="sm-nav" aria-label="Main">
+    <div class="sm-container">
+      <details class="sm-allcats">
+        <summary><svg class="sm-ic"><use href="#i-menu"/></svg>All Categories <svg class="sm-ic" style="width:14px;height:14px"><use href="#i-down"/></svg></summary>
+        <div class="sm-allcats-menu">{% for c in nav_cats %}<a href="{% url 'store:category' c.slug %}">{{ c.name }}</a>{% empty %}<a href="{% url 'store:products' %}">Browse all products</a>{% endfor %}</div>
+      </details>
+      <a href="{% url 'store:home' %}#main">Home</a>
+      <a href="{% url 'store:products' %}" {% if view == 'store:products' or view == 'store:search' %}aria-current="page"{% endif %}>Shop</a>
+      <a href="{% url 'store:categories' %}" {% if view == 'store:category' or view == 'store:categories' %}aria-current="page"{% endif %}>Categories</a>
+      <a href="{% url 'store:products' %}?offers=1" {% if request.GET.offers %}aria-current="page"{% endif %}>Offers</a>
+      <a href="{% url 'store:help' %}" {% if view == 'store:help' %}aria-current="page"{% endif %}>About</a>
+      <a href="{% url 'store:contact' %}" {% if view == 'store:contact' %}aria-current="page"{% endif %}>Contact</a>
+    </div>
+  </nav>
+  {% endwith %}
+</header>
+<main id="main" class="sm-container {% block main_class %}sm-page{% endblock %}">
+  <div class="sm-msgs"><!--sm-private-start-->{% include "_messages.html" %}<!--sm-private-end--></div>
+  {% block content %}{% endblock %}
+</main>
+{% block services %}
+<div class="sm-container">
+  <section class="sm-services" aria-label="Our services">
+    <div class="sm-service"><i><svg class="sm-ic"><use href="#i-headset"/></svg></i><div><b>24/7 Customer Support</b><span>We are always here to help</span></div></div>
+    <div class="sm-service"><i><svg class="sm-ic"><use href="#i-refresh"/></svg></i><div><b>Easy Returns</b><span>Hassle-free returns</span></div></div>
+    <div class="sm-service"><i><svg class="sm-ic"><use href="#i-shield"/></svg></i><div><b>100% Secure Payments</b><span>Your trust is our priority</span></div></div>
+    <div class="sm-service"><i><svg class="sm-ic"><use href="#i-award"/></svg></i><div><b>Quality Guarantee</b><span>Freshness you can trust</span></div></div>
+  </section>
+</div>
+{% endblock %}
+<footer class="sm-container sm-footer">
+  <a href="{% url 'store:help' %}">Help, delivery &amp; returns</a>{% if STORE_PHONE %} · Call {{ STORE_PHONE }}{% endif %}
+</footer>
+{% if not user.is_authenticated %}{% include "store/_auth_modal.html" %}{% endif %}
+<div class="sm-toasts" id="sm-toasts" aria-live="polite"></div>
+<script src="{% static 'js/offline/offline-db.js' %}?v=offline-1" defer></script>
+<script src="{% static 'js/offline/offline-sync.js' %}?v=offline-1" defer></script>
+<script src="{% static 'js/storefront.js' %}?v=full-width-banner-carousel-20261112-2" defer></script>
+<script src="{% static 'js/offline/offline.js' %}?v=offline-1" defer></script>
+</body>
+</html>

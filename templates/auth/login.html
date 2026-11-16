@@ -1,0 +1,13 @@
+{% extends "base_store.html" %}
+{% block title %}Log in · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto card">
+  <h1 class="text-2xl font-bold mb-4">Log in</h1>
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "_form_fields.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn btn-primary w-full" type="submit">Log in</button>
+  </form>
+  <p class="help mt-4">New customer? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+</div>
+{% endblock %}

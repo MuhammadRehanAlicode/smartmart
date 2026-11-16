@@ -1,0 +1,51 @@
+{% extends "base_store.html" %}
+{% load static %}
+{% block title %}About W&B General Store{% endblock %}
+{% block main_class %}sm-page sm-about-page{% endblock %}
+{% block content %}
+<section class="sm-about-hero" aria-labelledby="about-title">
+  <div class="sm-about-copy">
+    <span class="sm-about-pill"><svg class="sm-ic"><use href="#i-leaf"/></svg>About W&B General Store</span>
+    <h1 id="about-title">Bringing Freshness<br>to Your <span>Everyday Life</span></h1>
+    <p class="sm-about-intro">At W&B General Store, we believe that good food leads to a healthier, happier life. We are more than just a grocery store — we are your trusted partner in bringing fresh, high-quality products to your home, quickly, safely, and conveniently.</p>
+    <div class="sm-about-features">
+      <article class="sm-about-feature"><i><svg class="sm-ic"><use href="#i-leaf"/></svg></i><div><h2>Fresh &amp; Quality Products</h2><p>Only the best for you and your family.</p></div></article>
+      <article class="sm-about-feature"><i><svg class="sm-ic"><use href="#i-truck"/></svg></i><div><h2>Fast &amp; Reliable Delivery</h2><p>Freshness delivered to your doorstep.</p></div></article>
+      <article class="sm-about-feature"><i><svg class="sm-ic"><use href="#i-shield"/></svg></i><div><h2>Secure Payments</h2><p>Shop with confidence and peace of mind.</p></div></article>
+      <article class="sm-about-feature"><i><svg class="sm-ic"><use href="#i-headset"/></svg></i><div><h2>24/7 Support</h2><p>We're always here to help you.</p></div></article>
+    </div>
+  </div>
+  <div class="sm-about-visual">
+    <img src="{% static 'img/store/store-hero-grocery-cart.webp' %}" alt="A shopping cart filled with fresh groceries, fruits and vegetables" fetchpriority="high">
+    <span class="sm-about-leaf sm-about-leaf--one"></span><span class="sm-about-leaf sm-about-leaf--two"></span>
+    <div class="sm-about-overlay">Healthy Food,<br><b>Happy Life</b><svg class="sm-ic"><use href="#i-heart"/></svg></div>
+  </div>
+</section>
+
+<section class="sm-about-stats" aria-label="W&B General Store at a glance">
+  {% for stat in about_stats %}
+  <article class="sm-about-stat"><i>
+    {% if stat.icon == 'users' %}<svg class="sm-ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1z"/><path d="M16 5.5a3 3 0 0 1 0 5.8M18 14a5 5 0 0 1 3 4.6V20h-3"/></svg>
+    {% elif stat.icon == 'grid' %}<svg class="sm-ic"><use href="#i-grid"/></svg>
+    {% elif stat.icon == 'truck' %}<svg class="sm-ic"><use href="#i-truck"/></svg>
+    {% else %}<svg class="sm-ic"><use href="#i-leaf"/></svg>{% endif %}
+  </i><div><strong>{{ stat.value }}</strong><span>{{ stat.label }}</span></div></article>
+  {% endfor %}
+</section>
+
+<section class="sm-about-mission" aria-labelledby="mission-title">
+  <span class="sm-about-mission-leaf sm-about-mission-leaf--left"><svg class="sm-ic"><use href="#i-leaf"/></svg></span>
+  <h2 id="mission-title"><svg class="sm-ic"><use href="#i-leaf"/></svg>Our Mission<svg class="sm-ic"><use href="#i-leaf"/></svg></h2>
+  <p>To make fresh, healthy and quality groceries accessible to everyone, every day.</p>
+  <span class="sm-about-mission-leaf sm-about-mission-leaf--right"><svg class="sm-ic"><use href="#i-leaf"/></svg></span>
+</section>
+
+<details class="sm-about-support">
+  <summary>Delivery, payments &amp; returns</summary>
+  <h2>Delivery</h2><p>Delivery costs {{ CURRENCY }} {{ DELIVERY_FEE }}. Orders of {{ CURRENCY }} {{ FREE_DELIVERY_THRESHOLD }} or more are delivered free.</p>
+  <h2>Payment</h2><p>Cash on delivery. Please keep the exact total ready for the rider.</p>
+  <h2>Cancelling an order</h2><p>You can cancel from “My orders” while the order is Pending or Confirmed. Once we start processing it, please call the store.</p>
+  <h2>Returns</h2><p>If an item arrives damaged or wrong, tell the rider or contact the store on the day of delivery and we will arrange a replacement or refund.</p>
+</details>
+<section id="contact" class="sm-about-contact"><h2>Contact W&B General Store</h2><p>{% if STORE_PHONE %}Phone: {{ STORE_PHONE }}{% else %}Phone number not set yet.{% endif %}{% if STORE_ADDRESS %}<br>{{ STORE_ADDRESS }}{% endif %}</p></section>
+{% endblock %}

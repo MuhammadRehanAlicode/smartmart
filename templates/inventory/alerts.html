@@ -1,0 +1,12 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Stock alerts{% endblock %}
+{% block heading %}Stock alerts{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-2">
+  <div class="card"><h2 class="text-lg font-bold mb-2">Out of stock ({{ out_of_stock|length }})</h2>
+    {% for p in out_of_stock %}<p class="py-1 border-t border-line"><a href="{% url 'products:detail' p.pk %}">{{ p.name }}</a></p>{% empty %}<p class="help">Nothing is out of stock.</p>{% endfor %}</div>
+  <div class="card"><h2 class="text-lg font-bold mb-2">Low stock ({{ low_stock|length }})</h2>
+    {% for p in low_stock %}<p class="py-1 border-t border-line"><a href="{% url 'products:detail' p.pk %}">{{ p.name }}</a> — {{ p.stock_quantity }} left (alert at {{ p.low_stock_threshold }})</p>{% empty %}<p class="help">No low-stock items.</p>{% endfor %}</div>
+</div>
+<p class="mt-4"><a href="{% url 'inventory:movements' %}">View all stock movements →</a></p>
+{% endblock %}

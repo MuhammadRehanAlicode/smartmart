@@ -1,0 +1,20 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{% if purchase %}Edit purchase{% else %}New purchase{% endif %}{% endblock %}
+{% block heading %}{% if purchase %}Edit PUR-{{ purchase.pk }}{% else %}New purchase{% endif %}{% endblock %}
+{% block content %}
+<form method="post" novalidate class="card max-w-4xl">{% csrf_token %}
+  {% include "_form_fields.html" %}
+  <h2 class="text-lg font-bold mt-4">Items</h2>
+  <p class="help">Enter unit cost per selected purchase unit. Received stock is converted into each product's base unit.</p>
+  {{ formset.management_form }}
+  {% if formset.non_form_errors %}<p class="field-error" role="alert">{{ formset.non_form_errors }}</p>{% endif %}
+  <div id="formset-rows">{% for f in formset %}{% include "purchases/_item_row.html" with form=f %}{% endfor %}</div>
+  <p class="text-right font-bold mt-4">Purchase total: <span id="purchase-total">0.00</span></p>
+  <template id="empty-form">{% include "purchases/_item_row.html" with form=formset.empty_form %}</template>
+  <button type="button" id="add-row" class="btn btn-outline mt-3">+ Add another item</button>
+  <div class="mt-6"><button class="btn btn-primary" type="submit">Save purchase</button>
+    <a class="btn btn-outline" href="{% if purchase %}{% url 'purchases:detail' purchase.pk %}{% else %}{% url 'purchases:list' %}{% endif %}">Cancel</a></div>
+</form>
+{{ product_units_json|json_script:"product-unit-data" }}
+{% load static %}<script src="{% static 'js/formset.js' %}?v=multi-unit-20261112"></script>
+{% endblock %}

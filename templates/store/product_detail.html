@@ -1,0 +1,28 @@
+{% extends "base_store.html" %}
+{% load static store_extras %}
+{% block title %}{{ object.name }} · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="grid gap-6 md:grid-cols-2">
+  <div>{% if object.image %}<img src="{{ object.image.url }}" alt="{{ object.name }}" class="rounded-2xl w-full">{% else %}<div class="rounded-2xl flex items-center justify-center" style="aspect-ratio:1/1;background:#fff;border:1px solid var(--line)"><img src="{{ object|product_art_url }}" alt="{{ object.name }}" style="width:70%;height:70%;object-fit:contain"></div>{% endif %}</div>
+  <div class="card">
+    {% if object.category %}<p class="help"><a href="{% url 'store:category' object.category.slug %}">{{ object.category.name }}</a></p>{% endif %}
+    <h1 class="text-2xl font-bold">{{ object.name }}</h1>
+    <p class="text-2xl mt-2"><strong>{{ CURRENCY }} {{ object.discounted_price }}</strong>
+      {% if object.discount_percent %}<span class="help"><s>{{ CURRENCY }} {{ object.selling_price }}</s></span> <span class="alert-success" style="padding:0 .4rem;border-radius:.5rem">-{{ object.discount_percent|floatformat:"-2" }}%</span>{% endif %}</p>
+    <p class="mt-2">{% if object.is_out_of_stock %}<strong>Out of stock</strong>{% elif object.is_low_stock %}<strong>Only {{ object.stock_quantity }} left</strong>{% else %}<strong>In stock</strong>{% endif %}</p>
+    <p class="mt-3">{{ object.description|default:"" }}</p>
+    <p class="help mt-3">Delivery {{ CURRENCY }} {{ DELIVERY_FEE }}, free over {{ CURRENCY }} {{ FREE_DELIVERY_THRESHOLD }}. Pay cash on delivery.</p>
+    <div class="mt-4">
+    {% if object.is_out_of_stock %}<button class="btn btn-outline" disabled>Out of stock</button>
+    {% elif user.is_authenticated and not user.is_customer %}<p class="help">Sign in with a customer account to order.</p>
+    {% else %}
+      <form method="post" action="{% url 'store:cart-add' %}" class="flex gap-2 items-end js-add-form" data-product-name="{{ object.name }}" data-price="{{ object.discounted_price }}" data-list-price="{{ object.selling_price }}" data-stock="{{ object.stock_quantity }}" data-sku="{{ object.sku }}" data-image="{% if object.image %}{{ object.image.url }}{% else %}{{ object|product_art_url }}{% endif %}">{% csrf_token %}
+        <input type="hidden" name="product_id" value="{{ object.pk }}"><input type="hidden" name="next" value="{{ request.path }}">
+        <div><label class="label" for="qty">Quantity</label><input id="qty" class="input" style="width:6rem" type="number" name="quantity" min="1" max="{{ object.stock_quantity }}" value="1"></div>
+        <button class="btn btn-primary" type="submit">Add to cart</button></form>
+    {% endif %}
+    </div>
+  </div>
+</div>
+{% if related %}<section class="mt-8"><h2 class="text-xl font-bold mb-3">You may also like</h2><div class="sm-products sm-products--4">{% for p in related %}{% include "store/_card.html" %}{% endfor %}</div></section>{% endif %}
+{% endblock %}

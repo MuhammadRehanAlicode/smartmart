@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head>{% include "_head.html" %}<title>Receipt {{ object.receipt_number }}</title>
+<style>
+  .rcpt{max-width:380px;margin:1rem auto;background:#fff;padding:1.25rem;border:1px solid var(--line);border-radius:.75rem;font-family:ui-monospace,Menlo,monospace;font-size:.9rem}
+  .rcpt table{width:100%;border-collapse:collapse}.rcpt td,.rcpt th{padding:.15rem 0;text-align:left}.rcpt .r{text-align:right}
+  .rcpt hr{border:0;border-top:1px dashed #999;margin:.6rem 0}
+  @page{size:80mm auto;margin:2mm}
+  @media print{
+    html,body{width:76mm!important;margin:0!important;padding:0!important;background:#fff!important}
+    .no-print{display:none!important}
+    .rcpt{box-sizing:border-box;width:76mm;max-width:76mm;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;font-size:9pt;overflow-wrap:anywhere}
+    .rcpt table{width:100%;table-layout:fixed}
+    .rcpt td,.rcpt th{padding:1mm 0;vertical-align:top;overflow-wrap:anywhere}
+    .rcpt .r{text-align:right}
+  }
+</style></head>
+<body>
+<div class="no-print max-w-md mx-auto p-4 flex flex-wrap gap-2">
+  {% include "_messages.html" %}
+  <button class="btn btn-primary" type="button" onclick="window.print()">🖨 Print receipt</button>
+  <a class="btn btn-accent" href="{% url 'sales:pos' %}">New sale</a>
+  <a class="btn btn-outline" href="{% url 'sales:list' %}">All sales</a>
+  {% if user.is_owner and object.items.all %}<a class="btn btn-outline" href="{% url 'sales:return' object.pk %}">Return items</a>{% endif %}
+</div>
+<div class="rcpt">
+  <div style="text-align:center"><strong>{{ STORE_NAME }}</strong><br>Receipt {{ object.receipt_number }}<br>{{ object.created_at|date:"d M Y H:i" }}<br>Cashier: {{ object.cashier.get_full_name|default:object.cashier.username|default:"—" }}</div>
+  <hr>
+  <table>
+    <thead><tr><th>Item</th><th class="r">Qty</th><th class="r">Amount</th></tr></thead>
+    <tbody>{% for i in object.items.all %}
+      <tr><td>{{ i.product_name }}{% if i.discount_percent %}<br><small>{{ i.discount_percent }}% off, {{ CURRENCY }} {{ i.sold_price }} each</small>{% else %}<br><small>{{ CURRENCY }} {{ i.sold_price }} each</small>{% endif %}</td><td class="r">{{ i.quantity }} {{ i.get_unit_code_display }}{% if i.quantity_returned %}<br><small>({{ i.quantity_returned }} returned)</small>{% endif %}</td><td class="r">{{ i.line_total }}</td></tr>
+    {% endfor %}</tbody>
+  </table>
+  <hr>
+  <table>
+    <tr><td>Subtotal</td><td class="r">{{ object.subtotal }}</td></tr>
+    <tr><td>Discounts</td><td class="r">-{{ object.discount_total }}</td></tr>
+    <tr><td><strong>Total ({{ CURRENCY }})</strong></td><td class="r"><strong>{{ object.total }}</strong></td></tr>
+    <tr><td>Paid by</td><td class="r">{{ object.get_payment_method_display }}</td></tr>
+    {% if object.amount_tendered is not None %}<tr><td>Received</td><td class="r">{{ object.amount_tendered }}</td></tr><tr><td>Change</td><td class="r">{{ object.change_due }}</td></tr>{% endif %}
+  </table>
+  {% if object.returns.all %}<hr><strong>Returns</strong>
+    {% for r in object.returns.all %}<div>{{ r.created_at|date:"d M Y" }}: refund {{ CURRENCY }} {{ r.refund_total }}<br><small>{{ r.reason }}</small></div>{% endfor %}{% endif %}
+  <hr><div style="text-align:center">Thank you for shopping with us!</div>
+</div>
+</body></html>

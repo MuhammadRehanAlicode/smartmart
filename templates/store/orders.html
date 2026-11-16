@@ -1,0 +1,11 @@
+{% extends "base_store.html" %}
+{% block title %}My orders · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-3">My orders</h1>
+<div data-offline-orders></div>
+{% if orders %}<div class="grid gap-3">{% for order in orders %}
+  <a class="card block" style="text-decoration:none;color:inherit" href="{% url 'store:order-detail' order.pk %}">
+    <div class="flex flex-wrap justify-between gap-2"><strong>{{ order.number }}</strong>{% include "store/_order_status.html" %}</div>
+    <p class="help">{{ order.created_at|date:"d M Y H:i" }} · {{ CURRENCY }} {{ order.total }}</p></a>{% endfor %}</div>{% include "_pagination.html" %}
+{% else %}<div class="card text-center"><p>You have not placed any orders yet.</p><a class="btn btn-primary mt-3" href="{% url 'store:products' %}">Start shopping</a></div>{% endif %}
+{% endblock %}

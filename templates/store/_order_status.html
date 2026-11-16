@@ -1,0 +1,3 @@
+{% if order.status == "cancelled" %}<span class="alert alert-error" style="padding:.1rem .6rem;display:inline-block;margin:0">Cancelled</span>
+{% elif order.status == "delivered" %}<span class="alert alert-success" style="padding:.1rem .6rem;display:inline-block;margin:0">Delivered</span>
+{% else %}<span class="alert" style="padding:.1rem .6rem;display:inline-block;margin:0">{{ order.get_status_display }}</span>{% endif %}

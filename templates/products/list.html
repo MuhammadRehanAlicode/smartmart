@@ -1,0 +1,38 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Products{% endblock %}
+{% block heading %}Products{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="grid gap-3 md:grid-cols-5 mb-4">
+    <input class="input md:col-span-2" type="search" name="q" value="{{ request.GET.q }}" placeholder="Search name, SKU or barcode" aria-label="Search products">
+    <select class="input" name="category" aria-label="Category">
+      <option value="">All categories</option>
+      {% for c in categories %}<option value="{{ c.pk }}" {% if request.GET.category == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+    <select class="input" name="stock" aria-label="Stock level">
+      <option value="">Any stock</option>
+      <option value="low" {% if request.GET.stock == "low" %}selected{% endif %}>Low stock</option>
+      <option value="out" {% if request.GET.stock == "out" %}selected{% endif %}>Out of stock</option>
+    </select>
+    <button class="btn btn-primary" type="submit">Search</button>
+    <label class="help md:col-span-5"><input type="checkbox" name="archived" value="1" {% if request.GET.archived == "1" %}checked{% endif %}> Include archived</label>
+  </form>
+  {% if user.is_owner %}<div class="mb-4 flex gap-2"><a class="btn btn-primary" href="{% url 'products:create' %}">+ Add product</a><a class="btn btn-outline" href="{% url 'products:categories' %}">Categories</a></div>{% endif %}
+  {% if products %}
+  <div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Product</th><th>SKU</th><th>Price</th><th>Stock</th><th>Shop visibility</th></tr></thead>
+    <tbody>{% for p in products %}
+      <tr class="border-t border-line">
+        <td class="py-2"><a href="{% url 'products:detail' p.pk %}">{{ p.name }}</a><div class="help">{{ p.category|default:"No category" }}</div></td>
+        <td>{{ p.sku }}</td>
+        <td>{{ CURRENCY }} {{ p.discounted_price }}{% if p.discount_percent %} <span class="help">(-{{ p.discount_percent }}%)</span>{% endif %}</td>
+        <td>{{ p.stock_quantity }} {{ p.base_unit }}{% if p.equivalent_cartons %}<div class="help">{{ p.equivalent_cartons|floatformat:2 }} CTN</div>{% endif %}</td>
+        <td>{% if p.is_archived %}<strong>Archived</strong>{% elif p.is_online %}<strong>Visible in shop</strong>{% else %}<strong>Hidden from shop</strong>{% endif %}{% if not p.is_archived and p.is_online and p.is_out_of_stock %}<div class="help">Out of stock</div>{% endif %}</td>
+      </tr>{% endfor %}</tbody>
+  </table></div>
+  {% include "_pagination.html" %}
+  {% else %}
+  <p class="help">No products match. {% if user.is_owner %}Click “Add product” to create your first one.{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

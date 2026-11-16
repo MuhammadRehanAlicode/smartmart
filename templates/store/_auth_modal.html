@@ -1,0 +1,39 @@
+<div class="sm-modal" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title" aria-hidden="true">
+  <div class="sm-dialog" data-modal-dialog>
+    <button type="button" class="sm-close" data-modal-close aria-label="Close and keep browsing"><svg class="sm-ic"><use href="#i-x"/></svg></button>
+    <div class="lock"><svg class="sm-ic"><use href="#i-lock"/></svg></div>
+    <h2 id="auth-title">Login to Continue</h2>
+    <p class="lead">Sign in or create an account to add products to your cart and continue shopping.</p>
+    <div class="sm-intent" id="auth-intent" hidden></div>
+    <div class="sm-tabs" role="tablist" aria-label="Account">
+      <button type="button" role="tab" id="tab-login" aria-selected="true" aria-controls="panel-login" data-auth-tab="login">Login</button>
+      <button type="button" role="tab" id="tab-register" aria-selected="false" aria-controls="panel-register" data-auth-tab="register">Create Account</button>
+    </div>
+
+    <form id="panel-login" role="tabpanel" aria-labelledby="tab-login" method="post" action="{% url 'accounts:sign-in' %}" data-auth-form novalidate>{% csrf_token %}
+      <div class="sm-formerr" data-error-for="__all__" role="alert"></div>
+      <div class="sm-field"><label for="l-username">Username</label><input id="l-username" name="username" autocomplete="username" required><div class="err" data-error-for="username"></div></div>
+      <div class="sm-field"><label for="l-password">Password</label><input id="l-password" name="password" type="password" autocomplete="current-password" required><div class="err" data-error-for="password"></div></div>
+      <button class="sm-submit" type="submit">Login</button>
+    </form>
+
+    <form id="panel-register" role="tabpanel" aria-labelledby="tab-register" method="post" action="{% url 'accounts:register' %}" data-auth-form hidden novalidate>{% csrf_token %}
+      <div class="sm-formerr" data-error-for="__all__" role="alert"></div>
+      <div class="sm-grid2">
+        <div class="sm-field"><label for="r-first">First name</label><input id="r-first" name="first_name" autocomplete="given-name" required><div class="err" data-error-for="first_name"></div></div>
+        <div class="sm-field"><label for="r-last">Last name</label><input id="r-last" name="last_name" autocomplete="family-name"><div class="err" data-error-for="last_name"></div></div>
+      </div>
+      <div class="sm-field"><label for="r-username">Username</label><input id="r-username" name="username" autocomplete="username" required><div class="err" data-error-for="username"></div></div>
+      <div class="sm-grid2">
+        <div class="sm-field"><label for="r-email">Email</label><input id="r-email" name="email" type="email" autocomplete="email"><div class="err" data-error-for="email"></div></div>
+        <div class="sm-field"><label for="r-phone">Phone</label><input id="r-phone" name="phone" type="tel" placeholder="03001234567" autocomplete="tel" required><div class="err" data-error-for="phone"></div></div>
+      </div>
+      <div class="sm-grid2">
+        <div class="sm-field"><label for="r-p1">Password</label><input id="r-p1" name="password1" type="password" autocomplete="new-password" required><div class="err" data-error-for="password1"></div></div>
+        <div class="sm-field"><label for="r-p2">Confirm password</label><input id="r-p2" name="password2" type="password" autocomplete="new-password" required><div class="err" data-error-for="password2"></div></div>
+      </div>
+      <button class="sm-submit" type="submit">Create Account</button>
+    </form>
+    <button type="button" class="sm-skip" data-modal-close>Not now, continue browsing</button>
+  </div>
+</div>

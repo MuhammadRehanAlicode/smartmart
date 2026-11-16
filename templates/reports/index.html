@@ -1,0 +1,8 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Reports{% endblock %}
+{% block heading %}Reports{% endblock %}
+{% block content %}
+<div class="card max-w-xl"><p class="help mb-3">Choose a report. Each can be filtered by date, printed, or downloaded as CSV (opens in Excel).</p>
+  <ul>{% for slug, title in reports %}<li class="border-t border-line"><a class="block py-3" href="{% url 'reports:report' slug %}">{{ title }} →</a></li>{% endfor %}</ul>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Staff{% endblock %}
+{% block heading %}Staff{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-bold">Cashier / staff accounts</h2>
+    <a class="btn btn-primary" href="{% url 'dashboard:staff-create' %}">+ Add staff</a>
+  </div>
+  {% if staff_members %}
+  <div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Name</th><th>Username</th><th>Duty</th><th>Phone</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for s in staff_members %}
+      <tr class="border-t border-line"><td class="py-2">{{ s.get_full_name|default:"—" }}</td><td>{{ s.username }}</td><td>{{ s.duty|default:"Not assigned" }}</td><td>{{ s.phone|default:"—" }}</td><td>{% if s.is_active %}Active{% else %}Disabled{% endif %}</td><td><a class="btn btn-outline" href="{% url 'dashboard:staff-edit' s.pk %}">Edit</a></td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <p class="help">No staff yet. Click “Add staff” to create the first cashier account.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base_store.html" %}
+{% block title %}Checkout · {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-page sm-checkout-page{% endblock %}
+{% block content %}
+<section class="sm-checkout-heading" aria-labelledby="checkout-title">
+  <div>
+    <span class="sm-cart-eyebrow"><svg class="sm-ic"><use href="#i-shield"/></svg>You are offline — your order will be saved on this device</span>
+    <h1 id="checkout-title">Secure Checkout</h1>
+    <p>Confirm your delivery details. We will send your order as soon as you are back online.</p>
+  </div>
+</section>
+<div class="sm-checkout-layout" data-offline-checkout data-offline-page="checkout">
+  <div class="alert alert-error" data-offline-error hidden role="alert" style="grid-column:1/-1"></div>
+  <form class="sm-checkout-form-card" id="offline-checkout-form" novalidate>
+    <div class="sm-checkout-section-title"><i><svg class="sm-ic"><use href="#i-pin"/></svg></i><div><h2>Delivery details</h2><p>Where should we bring your order?</p></div><span class="sm-checkout-required"><b>*</b> Required</span></div>
+    <div class="sm-checkout-fields">
+      <div class="sm-checkout-field"><label for="o_name">Full name <b>*</b></label><input class="input" id="o_name" name="customer_name" maxlength="150" autocomplete="name"><span class="sm-checkout-error" data-offline-field-error="customer_name" role="alert"></span></div>
+      <div class="sm-checkout-field"><label for="o_phone">Phone number <b>*</b></label><input class="input" id="o_phone" name="phone" maxlength="16" inputmode="tel" autocomplete="tel"><small>So the rider can reach you, e.g. 03001234567.</small><span class="sm-checkout-error" data-offline-field-error="phone" role="alert"></span></div>
+      <div class="sm-checkout-field sm-checkout-field--wide"><label for="o_address">Delivery address <b>*</b></label><textarea class="input" id="o_address" name="address" rows="3" maxlength="500" autocomplete="street-address"></textarea><small>Include your street, area, and any directions that help our rider find you.</small><span class="sm-checkout-error" data-offline-field-error="address" role="alert"></span></div>
+      <div class="sm-checkout-field sm-checkout-field--wide"><label for="o_notes">Delivery instructions <span>(optional)</span></label><input class="input" id="o_notes" name="delivery_instructions" maxlength="300"></div>
+    </div>
+    <section class="sm-checkout-payment" aria-labelledby="payment-title">
+      <div class="sm-checkout-section-title"><i><svg class="sm-ic"><use href="#i-cash"/></svg></i><div><h2 id="payment-title">Payment method</h2><p>Choose how you’d like to pay.</p></div></div>
+      <label class="sm-checkout-cod"><input type="radio" checked disabled aria-label="Cash on delivery selected"><span class="sm-checkout-cod-icon"><svg class="sm-ic"><use href="#i-cash"/></svg></span><span><b>Cash on delivery</b><small>Pay in cash when your groceries arrive.</small></span><svg class="sm-ic sm-checkout-selected"><use href="#i-check"/></svg></label>
+      <p class="sm-checkout-cod-note">Please keep about <strong data-offline-cod-total></strong> ready for the delivery rider. The final amount is confirmed by {{ STORE_NAME }}.</p>
+    </section>
+    <div class="sm-checkout-submit-area">
+      <button class="sm-checkout-submit" type="submit"><svg class="sm-ic"><use href="#i-lock"/></svg><span>Save order</span><svg class="sm-checkout-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button>
+      <p><svg class="sm-ic"><use href="#i-shield"/></svg>Saved on this device only. No card details are ever stored.</p>
+    </div>
+  </form>
+  <aside class="sm-checkout-summary" data-offline-summary aria-labelledby="checkout-summary-title">
+    <div class="sm-checkout-summary-heading"><div><h2 id="checkout-summary-title">Your order</h2><span>Prices are estimates until confirmed</span></div><a href="{% url 'store:cart' %}">Edit cart</a></div>
+    <div class="sm-checkout-order-items" data-offline-lines></div>
+    <dl class="grid grid-cols-2 gap-1 mt-3" data-offline-totals></dl>
+  </aside>
+  <section class="card" data-offline-saved hidden role="status" style="grid-column:1/-1">
+    <h2 class="text-xl font-bold mb-2">Order saved on this device</h2>
+    <p>Your order of <strong data-offline-saved-total></strong> is <strong>waiting for internet</strong>. It has <strong>not</strong> been confirmed yet.</p>
+    <p class="help mt-2">We will send it automatically when you reconnect (you can close the browser — it stays saved). You can follow its status in My orders.</p>
+    <div class="flex flex-wrap gap-2 mt-3"><a class="btn btn-primary" href="{% url 'store:orders' %}">View my orders</a><a class="btn btn-outline" href="{% url 'store:products' %}">Keep shopping</a></div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Hero banners{% endblock %}
+{% block heading %}Homepage hero banners{% endblock %}
+{% block content %}
+<section class="card max-w-4xl">
+  <h2 class="text-lg font-bold">Add a banner</h2>
+  <p class="help mt-1">Upload an image to add it to the homepage carousel. JPG, PNG, or WebP; up to 10 MB.</p>
+  <form method="post" enctype="multipart/form-data" class="grid gap-3 md:grid-cols-2 mt-4">
+    {% csrf_token %}<input type="hidden" name="action" value="add">
+    <div><label class="label" for="{{ upload_form.image.id_for_label }}">Banner image</label>{{ upload_form.image }}{% for error in upload_form.image.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+    <div><label class="label" for="{{ upload_form.alt_text.id_for_label }}">Image description</label>{{ upload_form.alt_text }}{% for error in upload_form.alt_text.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+    <div><label class="label" for="{{ upload_form.sort_order.id_for_label }}">Display order</label>{{ upload_form.sort_order }}{% for error in upload_form.sort_order.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+    <div class="flex items-center gap-2">{{ upload_form.is_active }}<label for="{{ upload_form.is_active.id_for_label }}">Show on homepage</label></div>
+    {% for error in upload_form.non_field_errors %}<p class="field-error md:col-span-2">{{ error }}</p>{% endfor %}
+    <div class="md:col-span-2"><button class="btn btn-primary" type="submit">Add banner</button></div>
+  </form>
+</section>
+
+<section class="mt-6" aria-labelledby="banner-list-title">
+  <h2 class="text-lg font-bold mb-3" id="banner-list-title">Current banners</h2>
+  <div class="grid gap-4 xl:grid-cols-2">
+    {% for banner, form in edit_forms %}
+    <article class="card min-w-0">
+      <img src="{{ banner.image.url }}" alt="{{ banner.alt_text }}" loading="lazy" style="display:block;width:100%;height:190px;object-fit:contain;background:#f2f6fc;border-radius:10px">
+      <form method="post" enctype="multipart/form-data" class="grid gap-3 mt-4">
+        {% csrf_token %}<input type="hidden" name="action" value="update"><input type="hidden" name="banner_id" value="{{ banner.pk }}">
+        <div><label class="label" for="{{ form.image.id_for_label }}">Replace image (optional)</label>{{ form.image }}{% for error in form.image.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+        <div><label class="label" for="{{ form.alt_text.id_for_label }}">Image description</label>{{ form.alt_text }}{% for error in form.alt_text.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+        <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-end">
+          <div><label class="label" for="{{ form.sort_order.id_for_label }}">Display order</label>{{ form.sort_order }}{% for error in form.sort_order.errors %}<p class="field-error">{{ error }}</p>{% endfor %}</div>
+          <div class="flex items-center gap-2 pb-2">{{ form.is_active }}<label for="{{ form.is_active.id_for_label }}">Show on homepage</label></div>
+        </div>
+        {% for error in form.non_field_errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        <div class="flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Save banner</button></div>
+      </form>
+      <form method="post" class="mt-2" onsubmit="return confirm('Remove this banner from the homepage carousel? The image file will be kept.');">
+        {% csrf_token %}<input type="hidden" name="action" value="delete"><input type="hidden" name="banner_id" value="{{ banner.pk }}">
+        <button class="btn btn-outline" type="submit">Remove from carousel</button>
+      </form>
+    </article>
+    {% empty %}<p class="card help">No hero banners yet. Upload one above to show the homepage carousel.</p>{% endfor %}
+  </div>
+</section>
+{% endblock %}

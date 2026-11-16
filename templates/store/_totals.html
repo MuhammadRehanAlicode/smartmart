@@ -1,0 +1,6 @@
+<dl class="grid grid-cols-2 gap-1 mt-3">
+  <dt class="help">Subtotal</dt><dd class="text-right" data-cart-total="subtotal">{{ CURRENCY }} {{ totals.subtotal }}</dd>
+  <dt class="help">Discounts</dt><dd class="text-right" data-cart-total="discount">-{{ CURRENCY }} {{ totals.discount }}</dd>
+  <dt class="help">Delivery</dt><dd class="text-right" data-cart-total="delivery">{% if totals.delivery_fee %}{{ CURRENCY }} {{ totals.delivery_fee }}{% else %}Free{% endif %}</dd>
+  <dt class="text-xl font-bold">Total</dt><dd class="text-right text-xl font-bold" data-cart-total="total">{{ CURRENCY }} {{ totals.total }}</dd>
+</dl>

@@ -1,0 +1,18 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Sales{% endblock %}
+{% block heading %}Sales{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="grid gap-3 md:grid-cols-5 mb-4">
+    <input class="input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Receipt no. e.g. S-000012" aria-label="Receipt number">
+    <input class="input" type="date" name="date_from" value="{{ request.GET.date_from }}" aria-label="From date">
+    <input class="input" type="date" name="date_to" value="{{ request.GET.date_to }}" aria-label="To date">
+    <button class="btn btn-outline" type="submit">Filter</button>
+    <a class="btn btn-primary" href="{% url 'sales:pos' %}">+ New sale</a>
+  </form>
+  {% if sales %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Receipt</th><th>Date</th><th>Cashier</th><th>Payment</th><th>Total</th></tr></thead>
+    <tbody>{% for s in sales %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'sales:receipt' s.pk %}">{{ s.receipt_number }}</a></td><td>{{ s.created_at|date:"d M Y H:i" }}</td><td>{{ s.cashier|default:"—" }}</td><td>{{ s.get_payment_method_display }}</td><td>{{ CURRENCY }} {{ s.total }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% include "_pagination.html" %}{% else %}<p class="help">No sales found.</p>{% endif %}
+</div>
+{% endblock %}

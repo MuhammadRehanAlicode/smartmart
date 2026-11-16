@@ -1,0 +1,15 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Purchases{% endblock %}
+{% block heading %}Purchases{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="flex gap-2 mb-4">
+    <select class="input" name="status" aria-label="Status"><option value="">All statuses</option>{% for v, l in statuses %}<option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-outline" type="submit">Filter</button><a class="btn btn-primary" href="{% url 'purchases:create' %}">+ New purchase</a>
+  </form>
+  {% if purchases %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">No.</th><th>Supplier</th><th>Invoice</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+    <tbody>{% for p in purchases %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'purchases:detail' p.pk %}">PUR-{{ p.pk }}</a></td><td>{{ p.supplier }}</td><td>{{ p.invoice_reference|default:"—" }}</td><td>{{ CURRENCY }} {{ p.total }}</td><td>{{ p.get_status_display }}</td><td>{{ p.created_at|date:"d M Y" }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% include "_pagination.html" %}{% else %}<p class="help">No purchases yet.</p>{% endif %}
+</div>
+{% endblock %}

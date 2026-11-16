@@ -1,0 +1,84 @@
+{% extends "base_store.html" %}
+{% load static %}
+{% block title %}Contact W&B General Store{% endblock %}
+{% block main_class %}sm-page sm-contact-page{% endblock %}
+{% block content %}
+<div class="sm-contact-layout">
+  <div class="sm-contact-left">
+    <section class="sm-contact-intro" aria-labelledby="contact-title">
+      <span class="sm-contact-pill"><svg class="sm-ic"><use href="#i-leaf"/></svg>Get in Touch</span>
+      <h1 id="contact-title">We’re Here to <span>Help!</span></h1>
+      <p>Have a question, suggestion, or need assistance? We’d love to hear from you. Our team is ready to help make your W&B General Store experience better, faster, and easier.</p>
+      <div class="sm-contact-quick" aria-label="Contact options">
+        <article class="sm-contact-quick-item">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3 4.8 4.2a2 2 0 0 0-.9 2.5c2.2 5.5 6 9.4 11.5 11.5a2 2 0 0 0 2.5-.9l1.2-2.2a1.5 1.5 0 0 0-.6-2l-3-1.6a1.5 1.5 0 0 0-1.8.3l-1.1 1.1a13 13 0 0 1-3.5-3.5l1.1-1.1a1.5 1.5 0 0 0 .3-1.8l-1.6-3A1.5 1.5 0 0 0 7 3Z"/></svg></i>
+          <h2>Call Us</h2>
+          {% if STORE_PHONE %}<a href="tel:{{ STORE_PHONE|urlencode }}">{{ STORE_PHONE }}</a>{% else %}<span>Phone number not configured</span>{% endif %}
+          <small>{{ contact_hours|default:"Business hours not configured" }}</small>
+        </article>
+        <article class="sm-contact-quick-item">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></i>
+          <h2>Email Us</h2>
+          {% if contact_email %}<a href="mailto:{{ contact_email }}">{{ contact_email }}</a>{% else %}<span>Email not configured</span>{% endif %}
+          <small>We’ll reply as soon as we can</small>
+        </article>
+        <article class="sm-contact-quick-item">
+          <i><svg class="sm-ic"><use href="#i-pin"/></svg></i>
+          <h2>Visit Us</h2>
+          {% if STORE_ADDRESS %}<span>{{ STORE_ADDRESS|linebreaksbr }}</span>{% else %}<span>Store address not configured</span>{% endif %}
+          <small>Store location</small>
+        </article>
+        <article class="sm-contact-quick-item">
+          <i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-12.6 7.4L4 20l1.1-3.3A8.5 8.5 0 1 1 20 11.5Z"/><path d="M9 8.5c.3 2.5 2 4.2 4.5 4.5l1-1 2 .8-.3 1.8c-.1.6-.7 1-1.3 1-4.4-.3-7.6-3.5-7.9-7.9 0-.6.4-1.2 1-1.3l1.8-.3.8 2-1.6.4Z"/></svg></i>
+          <h2>WhatsApp</h2>
+          {% if contact_whatsapp %}<a href="https://wa.me/{{ contact_whatsapp }}" target="_blank" rel="noopener noreferrer">Chat with us</a>{% else %}<span>WhatsApp not configured</span>{% endif %}
+          <small>Message us anytime</small>
+        </article>
+      </div>
+    </section>
+
+    <section class="sm-contact-form-card" aria-labelledby="contact-form-title">
+      <div class="sm-contact-card-heading"><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></i><h2 id="contact-form-title">Send Us a Message</h2></div>
+      <p>Fill out the form below and we’ll get back to you as soon as possible.</p>
+      <form method="post" action="{% url 'store:contact' %}" class="sm-contact-form" data-contact-form>
+        {% csrf_token %}
+        {% if contact_form.non_field_errors %}<div class="sm-contact-errors" role="alert">{{ contact_form.non_field_errors }}</div>{% endif %}
+        <div class="sm-contact-fields">
+          <div class="sm-contact-field"><label for="{{ contact_form.name.id_for_label }}">Full Name <b>*</b></label>{{ contact_form.name }}{{ contact_form.name.errors }}</div>
+          <div class="sm-contact-field"><label for="{{ contact_form.email.id_for_label }}">Email Address <b>*</b></label>{{ contact_form.email }}{{ contact_form.email.errors }}</div>
+          <div class="sm-contact-field"><label for="{{ contact_form.subject.id_for_label }}">Subject <b>*</b></label>{{ contact_form.subject }}{{ contact_form.subject.errors }}</div>
+          <div class="sm-contact-field"><label for="{{ contact_form.phone.id_for_label }}">Phone Number <span>(optional)</span></label>{{ contact_form.phone }}{{ contact_form.phone.errors }}</div>
+          <div class="sm-contact-field sm-contact-field--wide"><label for="{{ contact_form.message.id_for_label }}">Message <b>*</b></label>{{ contact_form.message }}{{ contact_form.message.errors }}</div>
+        </div>
+        <button type="submit" class="sm-contact-submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 3-7.2 18-3.7-7.1L3 10.2 21 3Z"/><path d="M10.1 13.9 15 9"/></svg><span>Send Message</span></button>
+      </form>
+    </section>
+  </div>
+
+  <div class="sm-contact-right">
+    <section class="sm-contact-visual" aria-label="Fresh groceries from W&B General Store">
+      <img src="{% static 'img/store/contact-shopping-cart.webp' %}" alt="A phone displaying a grocery store beside a cart full of fresh produce" loading="lazy">
+      <div class="sm-contact-visual-copy"><span>Good Food</span><strong>Good Mood</strong><i aria-hidden="true">♡</i></div>
+    </section>
+
+    <section class="sm-contact-location" aria-labelledby="contact-location-title">
+      <div class="sm-contact-card-heading"><i><svg class="sm-ic"><use href="#i-pin"/></svg></i><h2 id="contact-location-title">Our Store Location</h2></div>
+      <div class="sm-contact-location-content">
+        <div class="sm-contact-details">
+          <div><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M5 21a7 7 0 0 1 14 0"/></svg></i><p><b>Address</b><span>{% if STORE_ADDRESS %}{{ STORE_ADDRESS|linebreaksbr }}{% else %}Store address not configured{% endif %}</span></p></div>
+          <div><i><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></i><p><b>Email</b><span>{% if contact_email %}<a href="mailto:{{ contact_email }}">{{ contact_email }}</a>{% else %}Email not configured{% endif %}</span></p></div>
+          <div><i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3 4.8 4.2a2 2 0 0 0-.9 2.5c2.2 5.5 6 9.4 11.5 11.5a2 2 0 0 0 2.5-.9l1.2-2.2a1.5 1.5 0 0 0-.6-2l-3-1.6a1.5 1.5 0 0 0-1.8.3l-1.1 1.1a13 13 0 0 1-3.5-3.5l1.1-1.1a1.5 1.5 0 0 0 .3-1.8l-1.6-3A1.5 1.5 0 0 0 7 3Z"/></svg></i><p><b>Phone</b><span>{% if STORE_PHONE %}<a href="tel:{{ STORE_PHONE|urlencode }}">{{ STORE_PHONE }}</a>{% else %}Phone number not configured{% endif %}</span></p></div>
+          <div><i><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i><p><b>Business Hours</b><span>{{ contact_hours|default:"Business hours not configured" }}</span></p></div>
+        </div>
+        <div class="sm-contact-map">
+          {% if contact_map_embed_url %}<iframe src="{{ contact_map_embed_url }}" title="W&B General Store location map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+          {% else %}<div class="sm-contact-map-empty"><i><svg class="sm-ic"><use href="#i-pin"/></svg></i><b>Store map</b><span>Add a verified map embed URL in the contact settings to show directions here.</span></div>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    {% if contact_social_links %}<section class="sm-contact-social" aria-label="Follow W&B General Store on social media"><div class="sm-contact-social-brand"><i><svg class="sm-ic"><use href="#i-leaf"/></svg></i><div><b>Follow Us</b><span>Stay connected for the latest updates and offers.</span></div></div><div class="sm-contact-social-links">{% for label, url in contact_social_links %}<a href="{{ url }}" target="_blank" rel="noopener noreferrer" aria-label="W&B General Store on {{ label }}">{{ label }}</a>{% endfor %}</div></section>{% endif %}
+  </div>
+</div>
+{% endblock %}
+{% block services %}{% endblock %}

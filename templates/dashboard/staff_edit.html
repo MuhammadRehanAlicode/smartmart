@@ -1,0 +1,12 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Edit staff{% endblock %}
+{% block heading %}Edit staff: {{ object.username }}{% endblock %}
+{% block content %}
+<div class="card max-w-lg">
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "_form_fields.html" %}
+    <button class="btn btn-primary" type="submit">Save staff details</button>
+    <a class="btn btn-outline" href="{% url 'dashboard:staff-list' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

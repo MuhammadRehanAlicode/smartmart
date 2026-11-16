@@ -1,0 +1,16 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Categories{% endblock %}
+{% block heading %}Categories{% endblock %}
+{% block content %}
+<div class="card max-w-xl">
+  {% if user.is_owner %}
+  <form method="post" class="mb-4">{% csrf_token %}
+    {% include "_form_fields.html" %}
+    <button class="btn btn-primary" type="submit">Add category</button>
+  </form>
+  {% endif %}
+  {% if categories %}<ul>{% for c in categories %}<li class="py-2 border-t border-line">{{ c.name }}</li>{% endfor %}</ul>
+  {% else %}<p class="help">No categories yet.</p>{% endif %}
+  <p class="mt-4"><a href="{% url 'products:list' %}">← Back to products</a></p>
+</div>
+{% endblock %}

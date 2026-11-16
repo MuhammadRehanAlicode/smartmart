@@ -1,0 +1,70 @@
+﻿{% extends "base_dashboard.html" %}
+{% block title %}{{ object.name }}{% endblock %}
+{% block heading %}{{ object.name }}{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-3">
+  <div class="card md:col-span-2">
+    {% if object.image %}<img src="{{ object.image.url }}" alt="{{ object.name }}" class="rounded-xl mb-4 max-h-64">{% endif %}
+    <p>{{ object.description|default:"No description." }}</p>
+    <dl class="grid grid-cols-2 gap-2 mt-4">
+      <dt class="help">SKU</dt><dd>{{ object.sku }}</dd>
+      <dt class="help">Barcode</dt><dd>{{ object.barcode|default:"—" }}</dd>
+      <dt class="help">Product code</dt><dd>{{ object.product_code }}</dd>
+      <dt class="help">Category</dt><dd>{{ object.category|default:"â€”" }}</dd>
+      <dt class="help">Selling price</dt><dd>{{ CURRENCY }} {{ object.selling_price }}{% if object.discount_percent %} â†’ {{ CURRENCY }} {{ object.discounted_price }} ({{ object.discount_percent }}% off){% endif %}</dd>
+      {% if user.is_owner %}<dt class="help">Average cost</dt><dd>{{ CURRENCY }} {{ object.cost_price }}</dd>
+      <dt class="help">Stock value</dt><dd>{{ CURRENCY }} {{ object.stock_value }}</dd>{% endif %}
+      <dt class="help">Shop visibility</dt><dd>{% if object.is_online and not object.is_archived %}Visible in shop{% else %}Hidden from shop{% endif %}</dd>
+    </dl>
+  </div>
+  <div class="card">
+    <p class="help">In stock</p>
+    <p class="text-4xl font-bold">{{ object.stock_quantity }} {{ object.base_unit }}</p>
+    {% if object.equivalent_cartons %}<p class="help">{{ object.equivalent_cartons|floatformat:2 }} CTN equivalent</p>{% endif %}
+    <form class="grid gap-2 mt-4" method="get" action="{% url 'products:barcode_labels' object.pk %}" target="_blank">
+      <label class="label" for="label-copies">Barcode labels</label>
+      <input id="label-copies" class="input" type="number" name="copies" min="1" max="100" value="1">
+      <label class="help"><input type="checkbox" name="show_price"> Include selling price</label>
+      <button class="btn btn-outline" type="submit">Print labels</button>
+    </form>
+    {% if object.is_out_of_stock %}<p class="field-error">Out of stock</p>{% elif object.is_low_stock %}<p class="field-error">Low stock (alert at {{ object.low_stock_threshold }})</p>{% endif %}
+    {% if user.is_owner %}
+    <div class="grid gap-2 mt-4">
+      <a class="btn btn-primary" href="{% url 'products:edit' object.pk %}">Edit</a>
+      {% if object.is_online and not object.is_archived %}<a class="btn btn-outline" href="{% url 'store:product' object.pk %}" target="_blank" rel="noopener">View in shop</a>{% endif %}
+      <a class="btn btn-outline" href="{% url 'products:adjust' object.pk %}">Adjust stock</a>
+      <form method="post" action="{% url 'products:archive' object.pk %}" onsubmit="return confirm('{% if object.is_archived %}Restore{% else %}Archive{% endif %} this product?');">{% csrf_token %}
+        <button class="btn btn-outline w-full" type="submit">{% if object.is_archived %}Restore{% else %}Archive{% endif %}</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<div class="card mt-4">
+  <h2 class="text-lg font-bold mb-2">Configured units and prices</h2>
+  {% if object.unit_options.all %}<div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="help"><th class="py-2">Unit</th><th>Base units per unit</th><th>Purchase</th><th>Sales</th><th>Selling price</th></tr></thead><tbody>
+    {% for unit in object.unit_options.all %}<tr class="border-t border-line"><td class="py-2">{{ unit.get_unit_code_display }}</td><td>{{ unit.conversion_factor }}</td><td>{% if unit.purchase_enabled %}Available{% else %}—{% endif %}</td><td>{% if unit.sales_enabled %}Available{% else %}—{% endif %}</td><td>{% if unit.sales_enabled %}{{ CURRENCY }} {{ unit.selling_price }}{% else %}—{% endif %}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="help">No unit options are configured.</p>{% endif %}
+</div>
+<div class="card mt-4">
+  <h2 class="text-lg font-bold mb-2">Stock history</h2>
+  {% if movements %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">When</th><th>Type</th><th>Change</th><th>Balance</th><th>Reason / ref</th><th>By</th></tr></thead>
+    <tbody>{% for m in movements %}<tr class="border-t border-line"><td class="py-2">{{ m.created_at|date:"d M Y H:i" }}</td><td>{{ m.get_movement_type_display }}</td><td>{{ m.quantity_change }} {{ object.base_unit }}</td><td>{{ m.balance_after }} {{ object.base_unit }}</td><td>{{ m.reason }} {{ m.reference }}</td><td>{{ m.created_by|default:"â€”" }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="help">No stock movements yet.</p>{% endif %}
+</div>
+<div class="card mt-4">
+  <h2 class="text-lg font-bold mb-2">Purchase history</h2>
+  {% if purchase_history %}<div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="help"><th class="py-2">Purchase</th><th>Date</th><th>Qty</th><th>Unit cost</th><th>Total</th></tr></thead><tbody>
+    {% for i in purchase_history %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'purchases:detail' i.purchase_id %}">PUR-{{ i.purchase_id }}</a></td><td>{{ i.purchase.created_at|date:"d M Y H:i" }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} ({{ i.converted_quantity }} {{ object.base_unit }})</td><td>{{ CURRENCY }} {{ i.unit_cost }}</td><td>{{ CURRENCY }} {{ i.line_total }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="help">No purchases yet.</p>{% endif %}
+</div>
+<div class="card mt-4">
+  <h2 class="text-lg font-bold mb-2">Sales history</h2>
+  {% if sales_history %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Receipt</th><th>Date</th><th>Qty</th><th>Sold at</th></tr></thead>
+    <tbody>{% for i in sales_history %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'sales:receipt' i.sale_id %}">{{ i.sale.receipt_number }}</a></td><td>{{ i.sale.created_at|date:"d M Y H:i" }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} ({{ i.converted_quantity }} {{ object.base_unit }})</td><td>{{ CURRENCY }} {{ i.sold_price }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="help">No sales yet.</p>{% endif %}
+</div>
+{% endblock %}
+

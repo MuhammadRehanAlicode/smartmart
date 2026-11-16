@@ -1,0 +1,30 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ object.number }}{% endblock %}
+{% block heading %}Order {{ object.number }} — {{ object.get_status_display }}{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-3">
+  <div class="card md:col-span-2">
+    <p><strong>{{ object.customer_name }}</strong> · {{ object.phone }}</p>
+    <p style="white-space:pre-line">{{ object.address }}</p>{% if object.delivery_instructions %}<p class="help">Note: {{ object.delivery_instructions }}</p>{% endif %}
+    <div class="overflow-x-auto my-4"><table class="w-full text-left"><thead><tr class="help"><th class="py-2">Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+      <tbody>{% for i in object.items.all %}<tr class="border-t border-line"><td class="py-2">{{ i.product_name }}</td><td>{{ i.quantity }}</td><td>{{ CURRENCY }} {{ i.sold_price }}</td><td>{{ CURRENCY }} {{ i.line_total }}</td></tr>{% endfor %}</tbody></table></div>
+    <p>Delivery: {{ CURRENCY }} {{ object.delivery_fee }} · <strong>Total: {{ CURRENCY }} {{ object.total }}</strong> (cash on delivery)</p>
+    {% for p in object.payments.all %}<p class="help">Payment: {{ p.get_method_display }} — {{ p.get_status_display }}</p>{% endfor %}
+    {% if object.cancel_reason %}<p class="field-error">Cancelled: {{ object.cancel_reason }}</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2 class="text-lg font-bold mb-2">Update status</h2>
+    {% if next_statuses or can_cancel %}
+    <form method="post" action="{% url 'orders:status' object.pk %}">{% csrf_token %}
+      <label class="label" for="note">Note / reason (required to cancel)</label><input id="note" name="note" class="input" maxlength="200">
+      <div class="grid gap-2 mt-3">
+        {% for v, l in next_statuses %}<button class="btn btn-primary" type="submit" name="status" value="{{ v }}">{% if v == "delivered" %}✔ {% endif %}Mark as {{ l }}</button>{% endfor %}
+        {% if can_cancel %}<button class="btn btn-outline" type="submit" name="status" value="cancelled" onclick="return confirm('Cancel this order and return the items to stock?');">Cancel order</button>{% endif %}
+      </div>
+    </form>
+    {% else %}<p class="help">This order is closed.</p>{% endif %}
+    <h2 class="text-lg font-bold mt-5 mb-1">History</h2>
+    {% for e in object.events.all %}<p class="py-1 border-t border-line">{{ e.get_to_status_display }}<br><span class="help">{{ e.created_at|date:"d M H:i" }} · {{ e.changed_by|default:"—" }}{% if e.note %} · {{ e.note }}{% endif %}</span></p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

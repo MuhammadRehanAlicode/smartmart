@@ -1,0 +1,98 @@
+﻿{% extends "base_store.html" %}
+{% load static store_extras %}
+{% block title %}{{ STORE_NAME }} Â· Fresh groceries delivered in Lahore{% endblock %}
+{% block main_class %}sm-home-page{% endblock %}
+{% block content %}
+{% if hero_banners %}<section class="sm-home-hero sm-banner-carousel" aria-label="W&amp;B General Store promotional banners">
+  <div class="sm-banner-track" data-hero-slides aria-live="off">
+    {% for banner in hero_banners %}
+    <article class="sm-banner-slide{% if forloop.first %} is-active{% endif %}" aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+      <img src="{{ banner.image.url }}" alt="{{ banner.alt_text }}" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+    </article>
+    {% endfor %}
+  </div>
+  <button class="sm-ref-arrow sm-ref-prev" type="button" data-hero-prev aria-label="Previous slide">‹</button>
+  <button class="sm-ref-arrow sm-ref-next" type="button" data-hero-next aria-label="Next slide">›</button>
+  <div class="sm-ref-dots" role="group" aria-label="Choose a banner">
+    {% for banner in hero_banners %}<button class="{% if forloop.first %}is-active{% endif %}" type="button" data-hero-dot="{{ forloop.counter0 }}" aria-label="Show banner {{ forloop.counter }}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}"></button>{% endfor %}
+  </div>
+</section>{% endif %}
+
+<section id="categories" class="sm-categories-section" aria-labelledby="cats-h">
+  <header class="sm-category-header">
+    <div class="sm-category-heading">
+      <span class="sm-category-pill"><svg class="sm-ic"><use href="#i-leaf"/></svg>Shop by Category</span>
+      <h2 id="cats-h">Browse Our <span>Top Categories</span></h2>
+      <p>Find everything you need, from fresh produce to daily essentials, all in one place.</p>
+    </div>
+    <div class="sm-category-showcase">
+      <img src="{% static 'img/store/category-showcase-groceries.webp' %}" alt="Everyday grocery essentials including rice, cooking oil, flour, pasta, snacks and coffee" loading="lazy">
+    </div>
+  </header>
+
+  <div class="sm-category-grid">
+    {% if spotlight_product %}
+    <a class="sm-category-card sm-category-card--product" href="{% url 'store:product' spotlight_product.pk %}" aria-label="View {{ spotlight_product.name }}, Rs. {{ spotlight_product.discounted_price|floatformat:2 }}">
+      <div class="sm-category-card__image">
+        <span class="sm-category-product-badge">Daily essential</span>
+        {% if spotlight_product.image %}<img src="{{ spotlight_product.image.url }}" alt="{{ spotlight_product.name }}" loading="lazy">{% else %}<img src="{{ spotlight_product|product_art_url }}" alt="{{ spotlight_product.name }}" loading="lazy">{% endif %}
+      </div>
+      <div class="sm-category-card__info"><div><h3>{{ spotlight_product.name }}</h3><p>Rs. {{ spotlight_product.discounted_price|floatformat:2 }}</p></div><span class="sm-category-card__arrow"><svg class="sm-ic"><use href="#i-right"/></svg></span></div>
+    </a>
+    {% endif %}
+    {% for c in categories %}
+    <a class="sm-category-card" href="{% url 'store:category' c.slug %}" aria-label="Browse {{ c.name }}, {{ c.product_count }} products">
+      <div class="sm-category-card__image"><img src="{% static c|category_art %}" alt="{{ c.name }}" loading="lazy"></div>
+      <div class="sm-category-card__info"><div><h3>{{ c.name }}</h3><p>{{ c.product_count }} Product{{ c.product_count|pluralize }}</p></div><span class="sm-category-card__arrow"><svg class="sm-ic"><use href="#i-right"/></svg></span></div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="sm-category-benefits" aria-label="Shopping benefits">
+    <div class="sm-category-benefit"><i><svg class="sm-ic"><use href="#i-leaf"/></svg></i><span><b>Fresh &amp; Quality Products</b><small>100% fresh and natural</small></span></div>
+    <div class="sm-category-benefit"><i><svg class="sm-ic"><use href="#i-truck"/></svg></i><span><b>Fast &amp; Reliable Delivery</b><small>At your doorstep</small></span></div>
+    <div class="sm-category-benefit"><i><svg class="sm-ic"><use href="#i-shield"/></svg></i><span><b>Secure Payments</b><small>Safe &amp; trusted</small></span></div>
+    <div class="sm-category-benefit"><i><svg class="sm-ic"><use href="#i-headset"/></svg></i><span><b>24/7 Customer Support</b><small>We're here to help</small></span></div>
+  </div>
+</section>
+
+<div class="sm-layout">
+  <div>
+    <section class="sm-promos" aria-label="Offers">
+      <div class="sm-promo sm-promo--yellow sm-promo--pantry"><div><h3>Rice &amp; Flour</h3><p class="off">Everyday Kitchen Staples</p><p>Quality grains for every meal</p><a class="btn-sm" href="{{ promo_pantry_url }}">Shop Now <svg class="sm-ic"><use href="#i-arrow"/></svg></a></div><div class="sm-promo__products" aria-hidden="true"><img src="{{ MEDIA_URL }}catalog/products/organic-rice.webp" alt="" loading="lazy"><img src="{{ MEDIA_URL }}catalog/products/wheat-flour.webp" alt="" loading="lazy"></div></div>
+      <div class="sm-promo sm-promo--green sm-promo--cooking"><div><h3>Cooking Oil &amp; Ghee</h3><p class="sub">For Your Everyday Cooking</p><p>Kitchen essentials, all in one place</p><a class="btn-sm" href="{{ promo_pantry_url }}">Shop Now <svg class="sm-ic"><use href="#i-arrow"/></svg></a></div><div class="sm-promo__products" aria-hidden="true"><img src="{{ MEDIA_URL }}catalog/products/cooking-oil.webp" alt="" loading="lazy"><img src="{{ MEDIA_URL }}catalog/products/desi-ghee.webp" alt="" loading="lazy"></div></div>
+      <div class="sm-promo sm-promo--pink"><div><h3>Snacks &amp; Beverages</h3><p class="sub">Your Everyday Favorites</p><p class="off">Up to 40% OFF</p><a class="btn-sm" href="{{ promo_snack_url }}">Shop Now <svg class="sm-ic"><use href="#i-arrow"/></svg></a></div><img src="{% static 'img/store/promo-snacks.jpg' %}" alt="" loading="lazy"></div>
+    </section>
+
+    <section aria-labelledby="feat-h">
+      <div class="sm-head"><h2 id="feat-h"><svg class="sm-ic"><use href="#i-leaf"/></svg>Featured Products</h2><a class="sm-viewall" href="{% url 'store:products' %}">View All <svg class="sm-ic" style="width:14px;height:14px"><use href="#i-arrow"/></svg></a></div>
+      <div class="sm-products">
+        {% for p in featured %}{% include "store/_card.html" with featured_card=True %}{% empty %}<p class="sm-empty">Products will appear here once the store adds them.</p>{% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <aside class="sm-side" aria-label="Best sellers and delivery">
+    <section class="sm-best">
+      <div class="sm-best__bar"><h2><svg class="sm-ic"><use href="#i-trophy"/></svg>Best Sellers</h2><a href="{% url 'store:products' %}?sort=popular">View All <svg class="sm-ic" style="width:13px;height:13px"><use href="#i-arrow"/></svg></a></div>
+      <ol>
+        {% for p in best_sellers %}
+        <li><a class="row" href="{% url 'store:product' p.pk %}"><span class="num">{{ forloop.counter }}</span>
+          {% with best_art=p|best_seller_product_art %}
+            {% if p.image %}<img src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">
+            {% elif best_art %}<img src="{{ best_art }}" alt="{{ p.name }}" loading="lazy">
+            {% else %}<img src="{{ p|product_art_url }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+          {% endwith %}
+          <span class="info"><b>{{ p.name }}</b><span>{{ CURRENCY }} {{ p.discounted_price|floatformat:"-2g" }}</span></span>
+          <svg class="sm-ic chev"><use href="#i-right"/></svg></a></li>
+        {% empty %}<li style="padding:16px 0" class="help">Best sellers will show up here soon.</li>{% endfor %}
+      </ol>
+    </section>
+    <section class="sm-delivery">
+      <h3>Free Delivery</h3><p>On Orders Above {{ CURRENCY }} {{ FREE_DELIVERY_THRESHOLD|floatformat:"0g" }}</p>
+      <a class="btn-sm" href="{% url 'store:products' %}">Shop Now <svg class="sm-ic"><use href="#i-arrow"/></svg></a>
+      <img src="{% static 'img/store/truck.svg' %}" alt="" loading="lazy">
+    </section>
+  </aside>
+</div>
+{% endblock %}

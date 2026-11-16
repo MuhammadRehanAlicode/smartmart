@@ -1,0 +1,18 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Stock movements{% endblock %}
+{% block heading %}Stock movements{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="grid gap-3 md:grid-cols-4 mb-4">
+    <input class="input md:col-span-2" type="search" name="q" value="{{ request.GET.q }}" placeholder="Search product or SKU" aria-label="Search">
+    <select class="input" name="type" aria-label="Type"><option value="">All types</option>
+      {% for v, l in types %}<option value="{{ v }}" {% if request.GET.type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
+  <p class="mb-3"><a href="{% url 'inventory:alerts' %}">View low-stock alerts →</a></p>
+  {% if movements %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">When</th><th>Product</th><th>Type</th><th>Change</th><th>Balance</th><th>Reason / ref</th></tr></thead>
+    <tbody>{% for m in movements %}<tr class="border-t border-line"><td class="py-2">{{ m.created_at|date:"d M Y H:i" }}</td><td><a href="{% url 'products:detail' m.product_id %}">{{ m.product.name }}</a></td><td>{{ m.get_movement_type_display }}</td><td>{{ m.quantity_change }} {{ m.product.base_unit }}</td><td>{{ m.balance_after }} {{ m.product.base_unit }}</td><td>{{ m.reason }} {{ m.reference }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% include "_pagination.html" %}{% else %}<p class="help">No movements recorded.</p>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block title %}New sale{% endblock %}
+{% block heading %}New sale{% endblock %}
+{% block content %}
+<div id="pos" class="grid gap-4 lg:grid-cols-5" data-search-url="{% url 'sales:search' %}" data-checkout-url="{% url 'sales:checkout' %}" data-currency="{{ CURRENCY }}">
+  {% csrf_token %}
+  <section class="card lg:col-span-3" aria-label="Find products">
+    <label class="label" for="pos-scanner">Scan product barcode</label>
+    <input id="pos-scanner" class="input" type="text" autocomplete="off" autofocus placeholder="Scan barcode here">
+    <p class="help mt-1">Scanner input stays ready. Each scan adds one unit to the cart.</p>
+    <label class="label mt-4" for="pos-search">Or search by name, SKU or product code</label>
+    <input id="pos-search" class="input" type="search" autocomplete="off" placeholder="Search products">
+    <ul id="pos-results" class="mt-3 grid gap-2" aria-live="polite"></ul>
+  </section>
+  <section class="card lg:col-span-2" aria-label="Cart">
+    <h2 class="text-lg font-bold mb-2">Cart</h2>
+    <p id="pos-empty" class="help">The cart is empty. Search for a product to begin.</p>
+    <ul id="pos-cart" class="grid gap-3"></ul>
+    <dl class="mt-4 grid grid-cols-2 gap-1">
+      <dt class="help">Subtotal</dt><dd id="pos-subtotal" class="text-right">0.00</dd>
+      <dt class="help">Discounts</dt><dd id="pos-discount" class="text-right">0.00</dd>
+      <dt class="text-xl font-bold">Total</dt><dd id="pos-total" class="text-right text-xl font-bold">0.00</dd>
+    </dl>
+    <div class="mt-4">
+      <label class="label" for="pos-method">Payment method</label>
+      <select id="pos-method" class="input">{% for v, l in methods %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+    </div>
+    <div class="mt-3" id="pos-cash-box">
+      <label class="label" for="pos-tendered">Cash received (optional)</label>
+      <input id="pos-tendered" class="input" type="number" min="0" step="0.01" inputmode="decimal">
+      <p class="help mt-1">Change to give back: <strong id="pos-change">—</strong></p>
+    </div>
+    <p id="pos-error" class="field-error mt-3" role="alert"></p>
+    <button id="pos-submit" class="btn btn-primary w-full mt-3 text-lg" type="button" disabled>Complete sale</button>
+    <button id="pos-clear" class="btn btn-outline w-full mt-2" type="button">Clear cart</button>
+  </section>
+</div>
+<script src="{% static 'js/pos.js' %}"></script>
+{% endblock %}

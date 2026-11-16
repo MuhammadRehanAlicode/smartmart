@@ -1,0 +1,18 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Return items{% endblock %}
+{% block heading %}Return items — {{ sale.receipt_number }}{% endblock %}
+{% block content %}
+<form method="post" class="card max-w-2xl">{% csrf_token %}
+  <p class="help mb-3">Enter how many of each item the customer is returning. Refunds use the price actually paid.</p>
+  {% for i in sale.items.all %}
+  <div class="flex items-center gap-3 border-t border-line py-2">
+    <label for="qty_{{ i.pk }}" class="flex-1">{{ i.product_name }}<br><span class="help">Bought {{ i.quantity }} · already returned {{ i.quantity_returned }} · {{ CURRENCY }} {{ i.sold_price }} each</span></label>
+    <input id="qty_{{ i.pk }}" name="qty_{{ i.pk }}" type="number" min="0" step="0.000001" max="{{ i.returnable }}" value="0" class="input" style="width:6rem" {% if not i.returnable %}disabled{% endif %}>
+  </div>
+  {% endfor %}
+  <div class="mt-4"><label class="label" for="reason">Reason</label><input id="reason" name="reason" class="input" maxlength="200" required></div>
+  <label class="mt-3 block"><input type="checkbox" name="restock" checked> Put returned items back into stock (untick if damaged)</label>
+  <div class="mt-4"><button class="btn btn-primary" type="submit" onclick="return confirm('Record this return and refund?');">Record return</button>
+  <a class="btn btn-outline" href="{% url 'sales:receipt' sale.pk %}">Cancel</a></div>
+</form>
+{% endblock %}

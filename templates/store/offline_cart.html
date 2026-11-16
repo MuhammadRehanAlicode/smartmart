@@ -1,0 +1,11 @@
+{% extends "base_store.html" %}
+{% block title %}Your cart · {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-page sm-cart-page{% endblock %}
+{% block content %}
+<section class="sm-cart-heading" aria-labelledby="cart-title">
+  <div><span class="sm-cart-eyebrow"><svg class="sm-ic"><use href="#i-leaf"/></svg>Fresh picks, ready for you</span><h1 id="cart-title">Your Shopping Cart</h1><p>Review your items and make any changes before checkout.</p></div>
+  <a class="sm-cart-continue" href="{% url 'store:products' %}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7 7-7-7 7-7"/></svg>Continue shopping</a>
+</section>
+{# Filled in by static/js/offline/offline.js from the cart saved on this device (IndexedDB). No account data is stored in this page. #}
+<div data-offline-cart-root data-offline-page="cart"></div>
+{% endblock %}

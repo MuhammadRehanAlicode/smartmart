@@ -1,0 +1,46 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block heading %}{{ report.title }}{% endblock %}
+{% block content %}
+<style>
+  @page{size:80mm auto;margin:2mm}
+  @media print{
+    html,body{width:76mm!important;min-width:0!important;margin:0!important;padding:0!important;background:#fff!important;font-size:8pt!important}
+    #sidebar,.no-print,header{display:none!important}
+    .ad-main-shell,.ad-main-content,main{width:76mm!important;min-width:0!important;max-width:76mm!important;margin:0!important;padding:0!important}
+    .ad-main-content>.ad-page-heading{margin:0 0 2mm!important;padding:0!important}
+    .ad-page-heading h1{font-size:12pt!important}
+    .card{width:76mm!important;max-width:76mm!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+    .overflow-x-auto{max-width:76mm!important;overflow:visible!important}
+    table{width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:collapse!important;font-size:6.5pt!important}
+    th,td{padding:1mm .5mm!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;vertical-align:top!important}
+    tr{break-inside:avoid;page-break-inside:avoid}
+  }
+</style>
+<div class="card">
+  <form method="get" class="no-print flex flex-wrap items-end gap-3 mb-4">
+    {% if uses_dates %}
+    <div><label class="label" for="f">From</label><input id="f" class="input" type="date" name="date_from" value="{{ range_start|date:'Y-m-d' }}"></div>
+    <div><label class="label" for="t">To</label><input id="t" class="input" type="date" name="date_to" value="{{ range_end|date:'Y-m-d' }}"></div>
+    {% endif %}
+    {% if slug == "sales" %}<div><label class="label" for="g">Group by</label><select id="g" class="input" name="group"><option value="day" {% if group == "day" %}selected{% endif %}>Day</option><option value="week" {% if group == "week" %}selected{% endif %}>Week</option><option value="month" {% if group == "month" %}selected{% endif %}>Month</option></select></div>{% endif %}
+    {% if slug == "movements" %}<div><label class="label" for="ty">Type</label><select id="ty" class="input" name="type"><option value="">All</option>{% for v, l in movement_types %}<option value="{{ v }}" {% if type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>{% endif %}
+    <button class="btn btn-primary" type="submit">Apply</button>
+    <button class="btn btn-outline" type="button" onclick="window.print()">🖨 Print</button>
+    <a class="btn btn-outline" href="{% querystring format='csv' %}">⬇ CSV</a>
+  </form>
+  {% if range_error %}<p class="field-error" role="alert">{{ range_error }}</p>{% endif %}
+  {% if uses_dates %}<p class="help mb-3">{{ range_start|date:"d M Y" }} – {{ range_end|date:"d M Y" }}</p>{% endif %}
+  {% for n in report.notes %}<p class="help mb-2">{{ n }}</p>{% endfor %}
+  {% for section in report.sections %}
+    {% if section.title %}<h2 class="text-lg font-bold mt-4 mb-2">{{ section.title }}</h2>{% endif %}
+    {% if section.rows %}
+    <div class="overflow-x-auto"><table class="w-full text-left">
+      <thead><tr class="help">{% for h in section.headers %}<th class="py-2 pr-3">{{ h }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for row in section.rows %}<tr class="border-t border-line">{% for c in row %}<td class="py-2 pr-3">{{ c }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      {% if section.total %}<tfoot><tr class="border-t border-line font-bold">{% for c in section.total %}<td class="py-2 pr-3">{{ c }}</td>{% endfor %}</tr></tfoot>{% endif %}
+    </table></div>
+    {% else %}<p class="help">{{ section.empty }}</p>{% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

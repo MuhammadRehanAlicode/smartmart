@@ -1,0 +1,86 @@
+{% extends "base_store.html" %}
+{% load static %}
+{% block title %}{% if category %}{{ category.name }}{% elif search_mode %}Search{% else %}Shop{% endif %} | {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-shop-page{% endblock %}
+{% block content %}
+<section class="sm-shop-hero" aria-label="Fresh groceries promotion">
+  <div class="sm-shop-hero__copy">
+    <span class="sm-shop-pill"><svg class="sm-ic"><use href="#i-leaf"/></svg>Our Store</span>
+    <h1>Shop Fresh, <span>Live Healthy</span></h1>
+    <p>Discover quality products at great prices. Fresh food, daily essentials and more!</p>
+  </div>
+  <img class="sm-shop-hero__image" src="{% static 'img/store/store-hero-grocery-cart.webp' %}" alt="A shopping cart filled with fresh groceries, fruits and vegetables" fetchpriority="high">
+  <div class="sm-shop-hero__badge"><small>Up to</small><b>50%</b><small>OFF</small></div>
+</section>
+
+{% if category or search_mode and q %}<nav class="sm-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'store:home' %}">Home</a><svg class="sm-ic"><use href="#i-right"/></svg>
+  {% if category %}<a href="{% url 'store:products' %}">Shop</a><svg class="sm-ic"><use href="#i-right"/></svg><span>{{ category.name }}</span>
+  {% elif search_mode and q %}<a href="{% url 'store:products' %}">Shop</a><svg class="sm-ic"><use href="#i-right"/></svg><span>Search results</span>
+  {% else %}<span>Shop</span>{% endif %}
+</nav>{% endif %}
+
+<div class="sm-shop-layout">
+  <aside class="sm-filter-panel" aria-label="Product filters">
+    <details class="sm-filter-details" open>
+      <summary class="sm-filter-title"><svg class="sm-ic" viewBox="0 0 24 24"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>Filter Products<svg class="sm-ic sm-filter-chevron"><use href="#i-down"/></svg></summary>
+      <form method="get" action="{% url 'store:products' %}" class="sm-filter-form" data-auto-filter>
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if request.GET.offers %}<input type="hidden" name="offers" value="{{ request.GET.offers }}">{% endif %}
+        <details class="sm-filter-section" id="categories" open>
+          <summary><svg class="sm-ic"><use href="#i-grid"/></svg>Categories<span class="sm-section-chevron"><svg class="sm-ic"><use href="#i-down"/></svg></span></summary>
+          <div class="sm-filter-options">{% for c in categories %}
+            <label class="sm-filter-row"><input type="checkbox" name="category" value="{{ c.slug }}" {% if c.slug in selected_categories %}checked{% endif %}><span>{{ c.name }}</span><small>{{ c.product_count }}</small></label>
+          {% empty %}<p class="sm-filter-empty">Categories will appear here.</p>{% endfor %}</div>
+        </details>
+        <details class="sm-filter-section" open>
+          <summary><svg class="sm-ic"><use href="#i-cash"/></svg>Price Range<span class="sm-section-chevron"><svg class="sm-ic"><use href="#i-down"/></svg></span></summary>
+          <div class="sm-filter-options">
+            <label class="sm-filter-row"><input type="checkbox" name="price_range" value="under_100" {% if 'under_100' in selected_price_ranges %}checked{% endif %}><span>Under Rs. 100</span></label>
+            <label class="sm-filter-row"><input type="checkbox" name="price_range" value="100_500" {% if '100_500' in selected_price_ranges %}checked{% endif %}><span>Rs. 100 &ndash; Rs. 500</span></label>
+            <label class="sm-filter-row"><input type="checkbox" name="price_range" value="500_1000" {% if '500_1000' in selected_price_ranges %}checked{% endif %}><span>Rs. 500 &ndash; Rs. 1,000</span></label>
+            <label class="sm-filter-row"><input type="checkbox" name="price_range" value="over_1000" {% if 'over_1000' in selected_price_ranges %}checked{% endif %}><span>Over Rs. 1,000</span></label>
+          </div>
+        </details>
+        <details class="sm-filter-section" open>
+          <summary><svg class="sm-ic"><use href="#i-check"/></svg>Availability<span class="sm-section-chevron"><svg class="sm-ic"><use href="#i-down"/></svg></span></summary>
+          <div class="sm-filter-options">
+            <label class="sm-filter-row"><input type="checkbox" name="availability" value="stock" {% if 'stock' in availability %}checked{% endif %}><span>In Stock</span><small>{{ availability_counts.stock }}</small></label>
+            <label class="sm-filter-row"><input type="checkbox" name="availability" value="out" {% if 'out' in availability %}checked{% endif %}><span>Out of Stock</span><small>{{ availability_counts.out }}</small></label>
+          </div>
+        </details>
+        <a class="sm-filter-reset" href="{% url 'store:products' %}"><svg class="sm-ic"><use href="#i-refresh"/></svg>Reset Filters</a>
+      </form>
+    </details>
+  </aside>
+
+  <section class="sm-shop-results" aria-labelledby="shop-heading">
+    <div class="sm-shop-toolbar">
+      <div class="sm-shop-heading"><h2 id="shop-heading"><svg class="sm-ic"><use href="#i-leaf"/></svg>{% if category %}{{ category.name }}{% elif search_mode and q %}Search Results{% else %}Our Shop{% endif %}</h2>
+        <p>Showing {% if page_obj.paginator.count %}{{ page_obj.start_index }}–{{ page_obj.end_index }}{% else %}0{% endif %} of {{ page_obj.paginator.count }} products</p>
+      </div>
+      <div class="sm-shop-controls">
+        <form method="get" action="{{ request.path }}" class="sm-sort-form">
+          {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+          {% for selected in selected_categories %}<input type="hidden" name="category" value="{{ selected }}">{% endfor %}
+          {% for selected in selected_price_ranges %}<input type="hidden" name="price_range" value="{{ selected }}">{% endfor %}
+          {% if min_price != None %}<input type="hidden" name="min_price" value="{{ min_price }}">{% endif %}{% if max_price != None %}<input type="hidden" name="max_price" value="{{ max_price }}">{% endif %}
+          {% for selected in availability %}<input type="hidden" name="availability" value="{{ selected }}">{% endfor %}{% if request.GET.offers %}<input type="hidden" name="offers" value="{{ request.GET.offers }}">{% endif %}
+          <label class="sm-sr" for="shop-sort">Sort products</label><select id="shop-sort" name="sort"><option value="popular" {% if sort == 'popular' %}selected{% endif %}>Sort by: Most Popular</option><option value="name" {% if sort == 'name' %}selected{% endif %}>Sort by: Name</option><option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option><option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option></select>
+          <button class="sm-sort-submit" type="submit">Sort</button>
+        </form>
+        <div class="sm-view-switch" role="group" aria-label="Product view"><button type="button" data-shop-view="grid" class="is-selected" aria-label="Grid view" aria-pressed="true"><svg class="sm-ic"><use href="#i-grid"/></svg></button><button type="button" data-shop-view="compact" aria-label="Compact grid view" aria-pressed="false"><svg class="sm-ic"><use href="#i-grid"/></svg></button><button type="button" data-shop-view="list" aria-label="List view" aria-pressed="false"><svg class="sm-ic"><use href="#i-menu"/></svg></button></div>
+      </div>
+    </div>
+
+    {% if products %}
+    <div class="sm-products sm-shop-products" data-shop-products>{% for p in products %}{% include "store/_card.html" %}{% endfor %}</div>
+    {% if page_obj.has_other_pages %}<nav class="sm-shop-pagination" aria-label="Product pages">
+      {% if page_obj.has_previous %}<a href="{% querystring page=page_obj.previous_page_number %}" aria-label="Previous page"><svg class="sm-ic"><use href="#i-left"/></svg></a>{% endif %}
+      {% for n in page_obj.paginator.page_range %}{% if n == page_obj.number %}<span class="is-current" aria-current="page">{{ n }}</span>{% elif n <= 3 or n >= page_obj.paginator.num_pages|add:'-2' or n >= page_obj.number|add:'-1' and n <= page_obj.number|add:'1' %}<a href="{% querystring page=n %}">{{ n }}</a>{% elif n == 4 or n == page_obj.paginator.num_pages|add:'-3' %}<span class="sm-page-gap">...</span>{% endif %}{% endfor %}
+      {% if page_obj.has_next %}<a href="{% querystring page=page_obj.next_page_number %}" aria-label="Next page"><svg class="sm-ic"><use href="#i-right"/></svg></a>{% endif %}
+    </nav>{% endif %}
+    {% else %}<div class="sm-empty sm-shop-empty"><h3>No products found</h3><p>Try changing your filters or search for something else.</p><a href="{% url 'store:products' %}">Browse all products</a></div>{% endif %}
+  </section>
+</div>
+{% endblock %}

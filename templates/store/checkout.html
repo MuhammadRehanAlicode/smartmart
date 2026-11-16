@@ -1,0 +1,86 @@
+{% extends "base_store.html" %}
+{% load static store_extras %}
+{% block title %}Checkout · {{ STORE_NAME }}{% endblock %}
+{% block main_class %}sm-page sm-checkout-page{% endblock %}
+{% block content %}
+<section class="sm-checkout-heading" aria-labelledby="checkout-title">
+  <div>
+    <span class="sm-cart-eyebrow"><svg class="sm-ic"><use href="#i-shield"/></svg>Almost there — your fresh order is one step away</span>
+    <h1 id="checkout-title">Secure Checkout</h1>
+    <p>Confirm your delivery details and place your order.</p>
+  </div>
+  <nav class="sm-checkout-progress" aria-label="Checkout progress">
+    <a href="{% url 'store:cart' %}" class="is-complete"><i><svg class="sm-ic"><use href="#i-check"/></svg></i><span>Cart</span></a>
+    <span class="sm-checkout-progress-line" aria-hidden="true"></span>
+    <span class="is-current" aria-current="step"><i>2</i><span>Delivery</span></span>
+    <span class="sm-checkout-progress-line" aria-hidden="true"></span>
+    <span><i>3</i><span>Confirmation</span></span>
+  </nav>
+</section>
+
+<div class="sm-checkout-layout">
+  <form method="post" class="sm-checkout-form-card" id="checkout-form">
+    {% csrf_token %}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+    {% if problems %}<div class="sm-checkout-errors" role="alert">Some items in your cart are no longer available. <a href="{% url 'store:cart' %}">Review your cart</a> and remove them before checkout.</div>{% endif %}
+    <div class="sm-checkout-section-title"><i><svg class="sm-ic"><use href="#i-pin"/></svg></i><div><h2>Delivery details</h2><p>Where should we bring your order?</p></div><span class="sm-checkout-required"><b>*</b> Required</span></div>
+    {% if form.non_field_errors %}<div class="sm-checkout-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="sm-checkout-fields">
+      <div class="sm-checkout-field">
+        <label for="{{ form.customer_name.id_for_label }}">Full name <b>*</b></label>{{ form.customer_name }}
+        {% for error in form.customer_name.errors %}<span class="sm-checkout-error" role="alert">{{ error }}</span>{% endfor %}
+      </div>
+      <div class="sm-checkout-field">
+        <label for="{{ form.phone.id_for_label }}">Phone number <b>*</b></label>{{ form.phone }}
+        {% if form.phone.help_text %}<small>{{ form.phone.help_text }}</small>{% endif %}
+        {% for error in form.phone.errors %}<span class="sm-checkout-error" role="alert">{{ error }}</span>{% endfor %}
+      </div>
+      <div class="sm-checkout-field sm-checkout-field--wide">
+        <label for="{{ form.address.id_for_label }}">Delivery address <b>*</b></label>{{ form.address }}
+        <small>Include your street, area, and any directions that help our rider find you.</small>
+        {% for error in form.address.errors %}<span class="sm-checkout-error" role="alert">{{ error }}</span>{% endfor %}
+      </div>
+      <div class="sm-checkout-field sm-checkout-field--wide">
+        <label for="{{ form.delivery_instructions.id_for_label }}">Delivery instructions <span>(optional)</span></label>{{ form.delivery_instructions }}
+        {% for error in form.delivery_instructions.errors %}<span class="sm-checkout-error" role="alert">{{ error }}</span>{% endfor %}
+      </div>
+    </div>
+
+    <section class="sm-checkout-payment" aria-labelledby="payment-title">
+      <div class="sm-checkout-section-title"><i><svg class="sm-ic"><use href="#i-cash"/></svg></i><div><h2 id="payment-title">Payment method</h2><p>Choose how you’d like to pay.</p></div></div>
+      <label class="sm-checkout-cod"><input type="radio" checked disabled aria-label="Cash on delivery selected"><span class="sm-checkout-cod-icon"><svg class="sm-ic"><use href="#i-cash"/></svg></span><span><b>Cash on delivery</b><small>Pay in cash when your groceries arrive.</small></span><svg class="sm-ic sm-checkout-selected"><use href="#i-check"/></svg></label>
+      <p class="sm-checkout-cod-note">Please keep <strong>{{ CURRENCY }} {{ totals.total }}</strong> ready for the delivery rider.</p>
+    </section>
+
+    <div class="sm-checkout-submit-area">
+      <button class="sm-checkout-submit" type="submit" id="place-order" {% if problems %}disabled{% endif %}><svg class="sm-ic"><use href="#i-lock"/></svg><span>Place order</span><svg class="sm-checkout-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-7-7 7 7-7 7"/></svg></button>
+      <p><svg class="sm-ic"><use href="#i-shield"/></svg>Your information is protected and used only to deliver your order.</p>
+    </div>
+  </form>
+
+  <aside class="sm-checkout-summary" aria-labelledby="checkout-summary-title">
+    <div class="sm-checkout-summary-heading"><div><h2 id="checkout-summary-title">Your order</h2><span>{{ CART_COUNT }} item{{ CART_COUNT|pluralize }} in your cart</span></div><a href="{% url 'store:cart' %}">Edit cart</a></div>
+    <div class="sm-checkout-order-items">
+      {% for i in items %}
+      <article class="sm-checkout-order-item">
+        <div class="sm-checkout-order-image">{% if i.product.image %}<img src="{{ i.product.image.url }}" alt="" loading="lazy">{% else %}<img src="{{ i.product|product_art_url }}" alt="" loading="lazy">{% endif %}<span>{{ i.quantity }}</span></div>
+        <div class="sm-checkout-order-info"><b>{{ i.product.name }}</b><small>{{ CURRENCY }} {{ i.product.discounted_price|floatformat:"-2g" }} each</small></div>
+        <strong>{{ CURRENCY }} {{ i.line_total|floatformat:"-2g" }}</strong>
+      </article>
+      {% endfor %}
+    </div>
+    {% include "store/_totals.html" %}
+    <div class="sm-checkout-summary-foot"><i><svg class="sm-ic"><use href="#i-truck"/></svg></i><span><b>Fresh groceries, delivered with care</b><small>Delivery timing will be confirmed after your order.</small></span></div>
+  </aside>
+</div>
+<script>
+  document.getElementById("checkout-form").addEventListener("submit", function (event) {
+    if (!this.checkValidity()) return;
+    var button = document.getElementById("place-order");
+    button.disabled = true;
+    button.setAttribute("aria-busy", "true");
+    var label = button.querySelector("span");
+    if (label) label.textContent = "Placing your order…";
+  });
+</script>
+{% endblock %}

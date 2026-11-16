@@ -1,0 +1,27 @@
+/* Plain-CSS component styles: work with both the Tailwind build and the dev CDN. */
+:root { --primary:#155bb8; --canvas:#f4f8ff; --accent:#38a9f2; --card:#fff; --ink:#172b47; --muted:#65768d; --line:#dbe6f5; }
+body { background: var(--canvas); color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 1rem; box-shadow: 0 1px 3px rgba(32,35,40,.08); padding: 1.5rem; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; min-height:2.75rem; padding:.625rem 1.25rem; border-radius:.75rem; font-weight:600; font-size:1rem; border:1px solid transparent; cursor:pointer; text-decoration:none; }
+.btn-primary { background: var(--primary); color:#fff; }
+.btn-primary:hover { background:#0d438e; }
+.btn-accent { background: var(--accent); color: var(--ink); }
+.btn-outline { background:#fff; border-color: var(--line); color: var(--ink); }
+.btn:focus-visible, .input:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.input { width:100%; min-height:2.75rem; padding:.5rem .75rem; border:1px solid var(--line); border-radius:.75rem; background:#fff; color: var(--ink); font-size:1rem; }
+.label { display:block; font-weight:600; margin-bottom:.25rem; }
+.help { color: var(--muted); font-size:.875rem; }
+.field-error { color:#B42318; font-size:.875rem; margin-top:.25rem; }
+.alert { padding:.75rem 1rem; border-radius:.75rem; border:1px solid var(--line); background:#fff; margin-bottom:1rem; }
+.alert-success { border-color:#a6b7d8; background:#e8edf5; }
+.alert-error { border-color:#F4B4AE; background:#FDECEA; }
+.nav-link { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; border-radius:.75rem; color:#fff; text-decoration:none; font-weight:500; }
+.nav-link:hover, .nav-link[aria-current="page"] { background: rgba(255,255,255,.15); }
+#sidebar.collapsed { width: 4.5rem; }
+#sidebar.collapsed .nav-text, #sidebar.collapsed .brand-text { display:none; }
+
+@media (max-width:640px) {
+  .card { padding:1rem; border-radius:.875rem; }
+  .btn { min-height:2.75rem; }
+  .input { min-height:2.75rem; font-size:16px; }
+}

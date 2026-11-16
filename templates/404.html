@@ -1,0 +1,6 @@
+{% extends "base_store.html" %}
+{% block title %}Page not found{% endblock %}
+{% block content %}
+<div class="card text-center max-w-xl mx-auto"><h1 class="text-2xl font-bold mb-2">Page not found</h1><p class="help mb-4">We could not find the page you were looking for.</p>
+<a class="btn btn-primary" href="{% url 'store:home' %}">Go to the home page</a></div>
+{% endblock %}

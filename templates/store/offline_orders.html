@@ -1,0 +1,8 @@
+{% extends "base_store.html" %}
+{% block title %}My orders · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-3">My orders</h1>
+<div class="alert alert-success" data-offline-saved-banner hidden role="status">Your order was saved on this device and is waiting for internet. It is <strong>not confirmed yet</strong>; we will send it automatically as soon as you are back online.</div>
+<p class="help mb-3">Orders placed while offline are listed here with their current status. Orders already confirmed by {{ STORE_NAME }} appear in your full order history when you are online.</p>
+<div data-offline-orders data-offline-page="orders"></div>
+{% endblock %}

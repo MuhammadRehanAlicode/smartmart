@@ -1,0 +1,7 @@
+{% extends "base_store.html" %}
+{% block title %}My profile · {{ STORE_NAME }}{% endblock %}
+{% block content %}
+<div class="card max-w-xl"><h1 class="text-2xl font-bold mb-3">My profile</h1>
+  <form method="post" novalidate>{% csrf_token %}{% include "_form_fields.html" %}<button class="btn btn-primary" type="submit">Save</button></form>
+  <p class="help mt-3">Username: {{ user.username }}</p></div>
+{% endblock %}

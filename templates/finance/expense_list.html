@@ -1,0 +1,19 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Expenses{% endblock %}
+{% block heading %}Expenses{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="grid gap-3 md:grid-cols-4 mb-4">
+    <input class="input" type="date" name="date_from" value="{{ request.GET.date_from }}" aria-label="From date">
+    <input class="input" type="date" name="date_to" value="{{ request.GET.date_to }}" aria-label="To date">
+    <button class="btn btn-outline" type="submit">Filter</button>
+    <a class="btn btn-primary" href="{% url 'expenses:create' %}">+ Record expense</a>
+  </form>
+  <p class="mb-3">Total for this view: <strong>{{ CURRENCY }} {{ filtered_total }}</strong></p>
+  {% if expenses %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead>
+    <tbody>{% for e in expenses %}<tr class="border-t border-line"><td class="py-2">{{ e.date|date:"d M Y" }}</td><td>{{ e.get_category_display }}</td><td>{{ e.description }}</td><td>{{ CURRENCY }} {{ e.amount }}</td>
+      <td><form method="post" action="{% url 'expenses:delete' e.pk %}" onsubmit="return confirm('Delete this expense?');">{% csrf_token %}<button class="btn btn-outline" type="submit" aria-label="Delete expense">🗑</button></form></td></tr>{% endfor %}</tbody>
+  </table></div>{% include "_pagination.html" %}{% else %}<p class="help">No expenses recorded.</p>{% endif %}
+</div>
+{% endblock %}

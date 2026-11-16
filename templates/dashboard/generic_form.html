@@ -1,0 +1,21 @@
+{% extends "base_dashboard.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block heading %}{{ title }}{% endblock %}
+{% block content %}
+<div class="card max-w-xl">
+  <form method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+    {% include "_form_fields.html" %}
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline" href="{{ back_url }}">Cancel</a>
+  </form>
+</div>
+<script>
+(() => {
+  const kind = document.getElementById("id_has_manufacturer_barcode");
+  const barcode = document.getElementById("id_barcode");
+  if (!kind || !barcode) return;
+  const toggle = () => { barcode.disabled = !kind.checked; barcode.required = kind.checked; };
+  kind.addEventListener("change", toggle); toggle();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Suppliers{% endblock %}
+{% block heading %}Suppliers{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="flex gap-2 mb-4"><input class="input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Search suppliers" aria-label="Search suppliers"><button class="btn btn-primary" type="submit">Search</button><a class="btn btn-accent" href="{% url 'suppliers:create' %}">+ Add</a></form>
+  {% if suppliers %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Name</th><th>Phone</th><th>We owe</th><th>Status</th></tr></thead>
+    <tbody>{% for s in suppliers %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'suppliers:detail' s.pk %}">{{ s.name }}</a></td><td>{{ s.phone|default:"—" }}</td><td>{{ CURRENCY }} {{ s.balance }}</td><td>{{ s.is_active|yesno:"Active,Inactive" }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<p class="help">No suppliers yet. Add your first supplier to record purchases.</p>{% endif %}
+</div>
+{% endblock %}

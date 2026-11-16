@@ -1,0 +1,16 @@
+{% extends "base_dashboard.html" %}
+{% block title %}Online orders{% endblock %}
+{% block heading %}Online orders{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="grid gap-3 md:grid-cols-4 mb-4">
+    <input class="input md:col-span-2" type="search" name="q" value="{{ request.GET.q }}" placeholder="Order no., name or phone" aria-label="Search orders">
+    <select class="input" name="status" aria-label="Status"><option value="">All statuses</option>{% for v, l in statuses %}<option value="{{ v }}" {% if request.GET.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
+  {% if orders %}<div class="overflow-x-auto"><table class="w-full text-left">
+    <thead><tr class="help"><th class="py-2">Order</th><th>Customer</th><th>Phone</th><th>Total</th><th>Status</th><th>Placed</th></tr></thead>
+    <tbody>{% for o in orders %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'orders:detail' o.pk %}">{{ o.number }}</a></td><td>{{ o.customer_name }}</td><td>{{ o.phone }}</td><td>{{ CURRENCY }} {{ o.total }}</td><td>{{ o.get_status_display }}</td><td>{{ o.created_at|date:"d M H:i" }}</td></tr>{% endfor %}</tbody>
+  </table></div>{% include "_pagination.html" %}{% else %}<p class="help">No orders found.</p>{% endif %}
+</div>
+{% endblock %}
