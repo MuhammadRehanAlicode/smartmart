@@ -45,8 +45,14 @@ class PurchaseItem(models.Model):
     conversion_factor = models.DecimalField(max_digits=12, decimal_places=6, default=Decimal("1.000000"))
     converted_quantity = models.DecimalField(max_digits=14, decimal_places=6, default=Decimal("0.000000"))
     unit_cost = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))])
+    selling_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.01"), validators=[MinValueValidator(Decimal("0.01"))])
     box_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"), blank=True,
                                    validators=[MinValueValidator(Decimal("0"))])
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.selling_price == Decimal("0.01"):
+            self.selling_price = self.product.selling_price
+        super().save(*args, **kwargs)
 
     @property
     def line_total(self):

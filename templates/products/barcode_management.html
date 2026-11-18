@@ -1,0 +1,49 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block title %}Barcode management{% endblock %}
+{% block heading %}Barcode management{% endblock %}
+{% block breadcrumb %}Products / Barcodes{% endblock %}
+{% block content %}
+<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 mb-4">
+  <div class="card"><p class="help">Registered barcodes</p><p class="text-2xl font-bold">{{ total_barcodes }}</p></div>
+  <div class="card"><p class="help">Manufacturer</p><p class="text-2xl font-bold">{{ manufacturer_barcodes }}</p></div>
+  <div class="card"><p class="help">Internal Code 128</p><p class="text-2xl font-bold">{{ internal_barcodes }}</p></div>
+  <div class="card"><p class="help">Missing barcode</p><p class="text-2xl font-bold">{{ missing_barcodes }}</p></div>
+</div>
+<div class="card mb-4">
+  <h2 class="text-lg font-bold">Search and preview</h2>
+  <form method="get" class="flex flex-wrap gap-2 mt-3"><input class="input min-w-64 flex-1" type="search" name="q" value="{{ query }}" placeholder="Product name, SKU, or barcode"><button class="btn btn-primary">Search</button><a class="btn btn-outline" href="{% url 'products:barcodes' %}">Clear</a></form>
+  <p class="help mt-2">Showing up to 200 products. Barcode numbers are copied exactly as stored.</p>
+</div>
+{% if message %}<p class="field-error mb-3" role="alert">{{ message }}</p>{% endif %}
+{% if user.is_owner and missing_barcodes %}<form method="post" class="mb-4">{% csrf_token %}<input type="hidden" name="action" value="generate_missing"><button class="btn btn-outline" type="submit">Generate internal barcodes for missing products</button></form>{% endif %}
+<form method="post" id="barcode-print-form" class="grid gap-4">
+  {% csrf_token %}
+  <div class="card overflow-x-auto">
+    <div class="flex flex-wrap gap-2 items-center justify-between mb-3"><h2 class="text-lg font-bold">Products</h2><label><input type="checkbox" data-select-all> Select all shown</label></div>
+    <table class="w-full text-left"><thead><tr class="help"><th>Select</th><th>Product / SKU</th><th>Barcode / source</th><th>Preview / files</th><th>Label copies</th></tr></thead><tbody>
+    {% for product in products %}<tr class="border-t border-line align-top"><td class="py-3"><input type="checkbox" name="products" value="{{ product.pk }}" {% if product.selected_for_print %}checked{% endif %} aria-label="Select {{ product.name }}"></td>
+      <td class="py-3"><a class="font-semibold" href="{% url 'products:detail' product.pk %}">{{ product.name }}</a><div class="help">{{ product.sku }}</div></td>
+      <td class="py-3"><span data-copy-barcode="{{ product.barcode|default:'' }}">{{ product.barcode|default:"Missing" }}</span><div class="help">{% if product.barcode %}{{ product.barcode_source }}{% else %}No registered barcode{% endif %}</div></td>
+      <td class="py-3">{% if product.barcode %}<img src="{% url 'products:barcode_image' product.pk 'svg' %}?inline=1" alt="Code 128 barcode for {{ product.name }}" class="max-w-56 h-12"><div class="flex gap-2 help"><a href="{% url 'products:barcode_image' product.pk 'svg' %}">SVG</a><a href="{% url 'products:barcode_image' product.pk 'png' %}">PNG</a><button type="button" data-copy-barcode="{{ product.barcode }}">Copy number</button></div>{% else %}<span class="help">No preview</span>{% endif %}</td>
+      <td class="py-3"><input class="input w-24" type="number" min="1" max="500" name="copies_{{ product.pk }}" value="1" aria-label="Label count for {{ product.name }}"></td></tr>
+    {% empty %}<tr><td colspan="5" class="py-4 help">No products match the search.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  <div class="card grid gap-3 md:grid-cols-4">
+    <h2 class="text-lg font-bold md:col-span-4">A4 sticker sheet layout</h2>
+    {% for field in sheet_form %}<label class="help">{{ field.label }}{{ field }}{% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}</label>{% endfor %}
+    <div class="flex flex-wrap gap-2 md:col-span-4"><button class="btn btn-primary" name="action" value="print">Preview and print A4 sheet</button><button class="btn btn-outline" name="action" value="thermal">Download thermal printer job</button></div>
+    <fieldset class="grid gap-2 sm:grid-cols-3 md:col-span-4"><legend class="font-semibold">Thermal label settings</legend>
+      <label class="help">Printer language<select class="input" name="printer"><option value="tspl">TSPL (TSC and compatible)</option><option value="zpl">ZPL II (Zebra and compatible)</option></select></label>
+      <label class="help">Label width (mm)<input class="input" type="number" name="thermal_width" min="20" max="104" step="0.1" value="50"></label>
+      <label class="help">Label height (mm)<input class="input" type="number" name="thermal_height" min="10" max="150" step="0.1" value="30"></label>
+    </fieldset>
+    <p class="help md:col-span-4">Thermal export downloads printer commands; it does not connect to or send data to a printer. Confirm printer language, media, gap, and resolution before printing.</p>
+  </div>
+</form>
+<script>
+document.querySelector('[data-select-all]').addEventListener('change', function (event) { document.querySelectorAll('input[name="products"]').forEach(function (box) { box.checked = event.target.checked; }); });
+document.querySelectorAll('[data-copy-barcode]').forEach(function (button) { button.addEventListener('click', function () { navigator.clipboard.writeText(button.dataset.copyBarcode).then(function () { button.textContent = 'Copied'; }).catch(function () { window.prompt('Copy barcode number', button.dataset.copyBarcode); }); }); });
+</script>
+{% endblock %}

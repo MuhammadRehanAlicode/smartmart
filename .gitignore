@@ -12,6 +12,7 @@ node_modules/
 static/dist/
 staticfiles/
 media/hero_banners/*
+media/product_barcodes/
 !media/catalog/
 !media/catalog/**
 backups/

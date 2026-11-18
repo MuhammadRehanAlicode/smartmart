@@ -12,7 +12,7 @@ Implemented in `apps/finance/calculations.py`; every figure is aggregated from d
 | Expenses | Recorded expenses dated in the range (rent, wages, etc.). Buying stock is **not** an expense |
 | Net profit | Gross profit − expenses |
 | Purchase spend | Value of purchases marked received in the range |
-| Inventory value | Σ stock × weighted-average cost, right now |
+| Inventory value | Σ stock × latest received purchase cost, right now |
 
 - Cash basis: a return counts in the period it is recorded, not the period of the original sale.
 - Returns without restock (damaged goods) refund the customer but keep the cost in COGS, i.e. the loss shows in profit.

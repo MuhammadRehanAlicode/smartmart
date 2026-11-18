@@ -2,45 +2,42 @@
 {% block title %}{{ title }}{% endblock %}
 {% block heading %}{{ title }}{% endblock %}
 {% block content %}
-<form class="card max-w-4xl" method="post" enctype="multipart/form-data" novalidate>
+<form class="card max-w-5xl space-y-7" method="post" enctype="multipart/form-data" novalidate id="product-form">
   {% csrf_token %}
-  {% include "_form_fields.html" %}
-  <section class="mt-6 border-t border-line pt-4">
-    <h2 class="text-lg font-bold">Purchase and sales units</h2>
-    <p class="help mb-3">The base unit is the inventory unit. Each conversion is product-specific; for example, 1 carton = 12 pieces.</p>
-    {{ unit_formset.management_form }}
-    {% if unit_formset.non_form_errors %}<p class="field-error">{{ unit_formset.non_form_errors }}</p>{% endif %}
-    <div class="grid gap-2 md:grid-cols-12 help font-semibold"><span class="md:col-span-2">Unit</span><span class="md:col-span-2">Base units per unit</span><span class="md:col-span-2">Purchase in this unit</span><span class="md:col-span-2">Sell in this unit</span><span class="md:col-span-3">Selling price</span></div>
-    <div class="grid gap-3">{% for f in unit_formset %}
-      <div class="grid gap-2 md:grid-cols-12 items-center border-t border-line pt-2" data-unit-row {% if f.instance.unit_code == unit_formset.instance.base_unit or not unit_formset.instance.pk and forloop.first %}data-base-unit-row{% endif %}>
-        {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
-        <div class="md:col-span-2">{{ f.unit_code }}{% for e in f.unit_code.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-        <div class="md:col-span-2">{{ f.conversion_factor }}{% for e in f.conversion_factor.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-        <div class="md:col-span-2">{{ f.purchase_enabled }}</div>
-        <div class="md:col-span-2">{{ f.sales_enabled }}</div>
-        <div class="md:col-span-3">{{ f.selling_price }}{% for e in f.selling_price.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-        <div class="md:col-span-1">{% if f.DELETE %}<label class="help">{{ f.DELETE }} Remove</label>{% endif %}</div>
-        {% for e in f.non_field_errors %}<p class="field-error md:col-span-12">{{ e }}</p>{% endfor %}
-      </div>
-    {% endfor %}</div>
+  {{ form.has_manufacturer_barcode }}
+  {% if form.non_field_errors %}<div class="field-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+  <section><h2 class="text-xl font-bold text-slate-900">Basic information</h2><p class="help mb-4">Product details used across inventory, POS, and your online shop.</p>
+    <div class="grid gap-4 md:grid-cols-2">
+      {% for field in form %}{% if field.name == 'image' or field.name == 'name' or field.name == 'sku' or field.name == 'category' or field.name == 'manufacturer' or field.name == 'description' %}
+      <div class="{% if field.name == 'description' %}md:col-span-2{% endif %}"><label class="label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-blue-700"> *</span>{% endif %}</label>{{ field }}{% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}{% for e in field.errors %}<p class="field-error">{{ e }}</p>{% endfor %}{% if field.name == 'image' %}<img id="image-preview" class="hidden mt-3 max-h-40 rounded-xl object-cover" alt="Selected product image preview">{% endif %}</div>
+      {% endif %}{% endfor %}
+    </div>
   </section>
-  <div class="mt-6 flex gap-2"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline" href="{{ back_url }}">Cancel</a></div>
+  <section class="border-t border-line pt-5"><h2 class="text-xl font-bold text-slate-900">Barcode information</h2><p class="help mb-4">A manufacturer barcode is kept exactly as printed. Without a manufacturer, Smart Mart assigns a unique internal Code 128 barcode.</p>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div><label class="label" for="{{ form.manufacturer.id_for_label }}">Manufacturer</label>{{ form.manufacturer }}{% for e in form.manufacturer.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+      <div id="barcode-field"><label class="label" for="{{ form.barcode.id_for_label }}">Manual barcode</label>{{ form.barcode }}{% if form.barcode.help_text %}<p class="help">{{ form.barcode.help_text }}</p>{% endif %}{% for e in form.barcode.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
+      <div class="md:col-span-2 rounded-xl bg-blue-50 p-4" id="barcode-mode"><p class="font-semibold text-blue-900" data-mode-text></p>
+        <div class="mt-2 flex flex-wrap items-center gap-3">{% if form.instance.barcode %}<code>{{ form.instance.barcode }}</code>{% endif %}<img id="barcode-preview" class="max-h-16 max-w-full {% if not form.instance.barcode %}hidden{% endif %}" alt="Barcode image preview"{% if form.instance.pk and form.instance.barcode %} src="{% url 'products:barcode_image' form.instance.pk 'png' %}?inline=1"{% endif %}></div>
+        <p class="help mt-1" data-preview-help>{% if form.instance.barcode %}Barcode preview. The generated barcode is printable from product details.{% else %}An internal barcode will be created and shown after saving.{% endif %}</p></div>
+    </div>
+  </section>
+  <section class="border-t border-line pt-5"><h2 class="text-xl font-bold text-slate-900">Unit & inventory</h2><p class="help mb-4">Opening stock is recorded once in the inventory ledger.</p>
+    <div class="grid gap-4 md:grid-cols-2">{% for field in form %}{% if field.name == 'base_unit' or field.name == 'low_stock_threshold' or field.name == 'opening_stock' %}<div><label class="label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-blue-700"> *</span>{% endif %}</label>{{ field }}{% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}{% for e in field.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>{% endif %}{% endfor %}</div>
+  </section>
+  <section class="border-t border-line pt-5"><h2 class="text-xl font-bold text-slate-900">Pricing information</h2><div class="mt-4 grid gap-4 md:grid-cols-2">{% for field in form %}{% if field.name == 'cost_price' or field.name == 'selling_price' or field.name == 'discount_percent' %}<div><label class="label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="text-blue-700"> *</span>{% endif %}</label>{{ field }}{% if field.help_text %}<p class="help">{{ field.help_text }}</p>{% endif %}{% for e in field.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>{% endif %}{% endfor %}<div class="flex items-center gap-2 pt-5">{{ form.is_online }}<label for="{{ form.is_online.id_for_label }}">Available online</label></div></div></section>
+  <div class="flex flex-wrap gap-3 border-t border-line pt-5"><button class="btn btn-primary" type="submit" data-save-product>Save Product</button><a class="btn btn-outline" href="{{ back_url }}">Cancel</a></div>
 </form>
 <script>
-  (() => {
-    const base = document.getElementById("id_base_unit");
-    const row = document.querySelector("[data-base-unit-row]");
-    if (!base || !row) return;
-    base.addEventListener("change", () => {
-      const code = row.querySelector('select[name$="-unit_code"]');
-      if (code) code.value = base.value;
-      const factor = row.querySelector('input[name$="-conversion_factor"]');
-      if (factor) factor.value = "1";
-      ["purchase_enabled", "sales_enabled"].forEach((name) => {
-        const checkbox = row.querySelector('input[name$="-' + name + '"]');
-        if (checkbox) checkbox.checked = true;
-      });
-    });
-  })();
+(() => {
+ const manufacturer=document.getElementById("{{ form.manufacturer.id_for_label }}"), barcode=document.getElementById("{{ form.barcode.id_for_label }}"), manufacturerFlag=document.getElementById("{{ form.has_manufacturer_barcode.id_for_label }}"), mode=document.querySelector("[data-mode-text]"), barcodePreview=document.getElementById("barcode-preview"), previewHelp=document.querySelector("[data-preview-help]");
+ const legacyManual=!!(manufacturerFlag&&manufacturerFlag.value==="true"&&manufacturer&&!manufacturer.value.trim());let manufacturerEdited=false;
+ function update(){const manual=!!(manufacturer&&manufacturer.value.trim())||(legacyManual&&!manufacturerEdited);if(manufacturerFlag)manufacturerFlag.value=manual?"true":"false";if(mode)mode.textContent=manual?"Manual barcode mode — enter the barcode from the package.":"Automatic barcode mode — a unique internal barcode will be created on save.";const wrap=document.getElementById("barcode-field");if(wrap){wrap.hidden=!manual;if(barcode)barcode.required=manual;}}
+ let previewTimer, previewObjectUrl;
+ function refreshBarcodePreview(){window.clearTimeout(previewTimer);previewTimer=window.setTimeout(async()=>{const manual=!!(manufacturer&&manufacturer.value.trim())||(legacyManual&&!manufacturerEdited),value=barcode?.value||"";if(!manual||!value){if(!barcodePreview?.getAttribute("src"))barcodePreview?.classList.add("hidden");return;}try{const response=await fetch("{% url 'products:barcode_preview' %}?value="+encodeURIComponent(value),{credentials:"same-origin"});if(!response.ok)return;const imageUrl=URL.createObjectURL(await response.blob());if(previewObjectUrl)URL.revokeObjectURL(previewObjectUrl);previewObjectUrl=imageUrl;barcodePreview.src=imageUrl;barcodePreview.classList.remove("hidden");if(previewHelp)previewHelp.textContent="Preview of the exact manual barcode value.";}catch(_){if(previewHelp)previewHelp.textContent="Barcode preview is unavailable right now.";}},250);}
+ manufacturer?.addEventListener("input",()=>{manufacturerEdited=true;update();refreshBarcodePreview();});barcode?.addEventListener("input",refreshBarcodePreview);update();
+ const image=document.getElementById("{{ form.image.id_for_label }}"),preview=document.getElementById("image-preview");image?.addEventListener("change",()=>{if(image.files&&image.files[0]){preview.src=URL.createObjectURL(image.files[0]);preview.classList.remove("hidden");}});
+ document.getElementById("product-form")?.addEventListener("submit",()=>{const button=document.querySelector("[data-save-product]");if(button){button.disabled=true;button.textContent="Saving product…";}});
+})();
 </script>
 {% endblock %}

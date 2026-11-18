@@ -30,11 +30,6 @@ def change_stock(product, delta, movement_type, *, user=None, reason="", referen
         raise InsufficientStock(f"Only {locked.stock_quantity} of {locked.name} in stock.")
 
     fields = ["stock_quantity", "updated_at"]
-    if movement_type == StockMovement.Type.PURCHASE and unit_cost is not None and delta > 0:
-        # Weighted-average cost: (old value + new value) / new quantity.
-        total = locked.stock_quantity * locked.cost_price + delta * Decimal(unit_cost)
-        locked.cost_price = (total / new_qty).quantize(Decimal("0.01"), ROUND_HALF_UP)
-        fields.append("cost_price")
     locked.stock_quantity = new_qty
     locked.save(update_fields=fields)
 

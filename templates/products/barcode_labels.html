@@ -1,14 +1,18 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Barcode labels — {{ product.name }}</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Barcode labels — {{ product.name }}</title>
 <style>
 @page { size: 50mm 30mm; margin: 1mm; }
 * { box-sizing: border-box; }
 body { font: 9pt Arial, sans-serif; margin: 0; color: #111; }
 .label { width: 48mm; height: 28mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; page-break-after: always; }
 .name { font-weight: 700; max-width: 47mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.code { font-size: 8pt; letter-spacing: .5px; }
-.barcode svg { width: 44mm; height: 15mm; }
+.sku, .code { font-size: 8pt; letter-spacing: .25px; }
+.barcode svg { width: 44mm; height: 14mm; }
+.toolbar { position: sticky; top: 0; padding: 12px; background: #eef3fa; text-align: center; }
 @media screen { body { background: #eee; padding: 12px; } .label { background: white; margin: 0 auto 12px; } }
+@media print { .toolbar { display: none; } }
 </style></head><body>
-{% for copy in copies %}<article class="label"><div class="name">{{ product.name }}</div><div class="barcode">{{ barcode_svg|safe }}</div><div class="code">{{ product.product_code }}{% if show_price %} &middot; {{ CURRENCY }} {{ product.discounted_price }}{% endif %}</div></article>{% endfor %}
-<script>window.addEventListener('load', () => window.print());</script></body></html>
+<div class="toolbar"><button type="button" onclick="window.print()">Print labels</button> <button type="button" onclick="navigator.clipboard.writeText('{{ product.barcode|escapejs }}')">Copy barcode number: {{ product.barcode }}</button>
+<a href="{% url 'products:barcode_image' product.pk 'svg' %}">Download SVG</a> <a href="{% url 'products:barcode_image' product.pk 'png' %}">Download PNG</a></div>
+{% for copy in copies %}<article class="label"><div class="name">{{ product.name }}</div><div class="sku">SKU {{ product.sku }}</div><div class="barcode">{{ barcode_svg|safe }}</div><div class="code">{{ product.barcode }}{% if show_price %} · {{ CURRENCY }} {{ product.discounted_price }}{% endif %}</div></article>{% endfor %}
+</body></html>

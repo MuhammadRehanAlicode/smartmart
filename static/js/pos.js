@@ -9,7 +9,7 @@
     : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === "x" ? r : (r & 3 | 8)).toString(16); });
   const cents = (s) => Math.round(parseFloat(s) * 100);
   const money = (c) => (c / 100).toFixed(2);
-  let busy = false, timer = null, lastResults = [];
+  let busy = false, timer = null, lastResults = [], scanInFlight = false;
 
   function el(tag, text, cls) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (cls) e.className = cls; return e; }
 
@@ -31,17 +31,48 @@
     return true;
   }
 
-  async function scanBarcode() {
-    const input = $("pos-scanner"), barcode = input.value.trim();
+  function cacheProduct(p) {
+    if (!window.SmartMart || !SmartMart.db) return;
+    SmartMart.db.put("barcodeProducts", { id: p.id, name: p.name, sku: p.sku, barcode: p.barcode || "",
+      stock: p.stock, base_unit: p.base_unit, price: p.price, list_price: p.list_price, units: p.units || [], cached_at: Date.now() }).catch(() => {});
+  }
+
+  async function cachedProduct(barcode) {
+    if (!window.SmartMart || !SmartMart.db) return null;
+    try {
+      const list = await SmartMart.db.getAll("barcodeProducts");
+      const found = list.find((item) => item.barcode === barcode);
+      if (!found) return null;
+      const base = found.base_unit || "PCS";
+      return { id: found.id, name: found.name, sku: found.sku, barcode: found.barcode,
+        stock: String(found.stock), base_unit: base, price: found.price || found.list_price,
+        list_price: found.list_price || found.price,
+        units: found.units && found.units.length ? found.units : [{ code: base, label: base, factor: "1", price: found.list_price || found.price, sale_price: found.price || found.list_price }],
+        cached: true, cached_at: found.cached_at };
+    } catch (_) { return null; }
+  }
+
+  async function scanBarcode(value, fromCamera) {
+    const input = $("pos-scanner"), barcode = (value || input.value).trim();
     if (!barcode) return;
+    if (scanInFlight) return;
+    scanInFlight = true;
     input.value = "";
     try {
       const r = await fetch(searchUrl + "?q=" + encodeURIComponent(barcode) + "&scan=1", { credentials: "same-origin" });
       const data = await r.json(), p = (data.results || []).find((item) => item.barcode === barcode);
       if (!p) $("pos-error").textContent = "Barcode not found: " + barcode;
-      else addToCart(p);
-    } catch (e) { $("pos-error").textContent = "Barcode lookup failed. Check your connection."; }
-    input.focus();
+      else { cacheProduct(p); addToCart(p); $("pos-offline-note").textContent = ""; }
+    } catch (e) {
+      const p = await cachedProduct(barcode);
+      if (p) {
+        addToCart(p);
+        $("pos-offline-note").textContent = "Offline catalog snapshot from " + new Date(p.cached_at || Date.now()).toLocaleString() + ". Checkout still needs the server; stock and price may have changed.";
+      } else $("pos-error").textContent = "Barcode not found in the last cached catalog: " + barcode;
+    } finally {
+      scanInFlight = false;
+      if (!fromCamera) input.focus();
+    }
   }
 
   function render() {
@@ -98,6 +129,7 @@
     try { const r = await fetch(searchUrl + "?q=" + encodeURIComponent(q), { credentials: "same-origin" }); data = await r.json(); }
     catch (e) { $("pos-error").textContent = "Search failed. Check your connection."; return; }
     lastResults = data.results || [];
+    lastResults.forEach(cacheProduct);
     const ul = $("pos-results"); ul.textContent = "";
     if (!lastResults.length) ul.appendChild(el("li", "No products found.", "help"));
     lastResults.forEach((p) => {
@@ -117,7 +149,8 @@
   $("pos-search").addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => search(false), 250); });
   $("pos-search").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(timer); search(true); } });
   $("pos-tendered").addEventListener("input", render);
-  $("pos-scanner").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); scanBarcode(); } });
+  $("pos-scanner").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); if (!e.repeat) scanBarcode(); } });
+  root.addEventListener("smartmart:barcode", (e) => scanBarcode(e.detail.barcode, true));
   $("pos-method").addEventListener("change", () => { $("pos-cash-box").hidden = $("pos-method").value !== "cash"; });
   $("pos-clear").addEventListener("click", () => { if (!cart.size || confirm("Clear the whole cart?")) { cart.clear(); render(); } });
 

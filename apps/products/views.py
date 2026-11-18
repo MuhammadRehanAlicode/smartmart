@@ -6,8 +6,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, DetailView, FormView, ListView, UpdateView
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.template.loader import render_to_string
+from django.utils.text import slugify
+from barcode.errors import BarcodeError
 
 from apps.accounts.permissions import OwnerRequiredMixin, StaffRequiredMixin
 from apps.core.audit import log_action
@@ -15,7 +17,8 @@ from apps.inventory.forms import StockAdjustmentForm
 from apps.inventory.models import StockMovement
 from apps.inventory.services import InsufficientStock, adjust_stock, change_stock
 
-from .forms import CategoryForm, ProductCreateForm, ProductForm, ProductUnitFormSet
+from .barcodes import render_barcode, thermal_job
+from .forms import BarcodeSheetForm, CategoryForm, ProductCreateForm, ProductForm, ProductUnitFormSet, ThermalLabelForm
 from .models import Category, Product, ProductUnit
 
 PRICE_FIELDS = {"cost_price", "selling_price", "discount_percent"}
@@ -66,17 +69,140 @@ class ProductBarcodeLabelView(StaffRequiredMixin, View):
         except ValueError:
             copies = 1
         show_price = request.GET.get("show_price") == "on"
-        # Keep barcode values verbatim; Code 128 supports the generated internal IDs
-        # and the common printable manufacturer barcode character set.
-        from barcode import get as get_barcode
-        from barcode.writer import SVGWriter
-        svg = get_barcode("code128", product.barcode, writer=SVGWriter()).render(
-            {"module_width": 0.28, "module_height": 12, "quiet_zone": 2, "write_text": False}
-        ).decode("utf-8")
+        try:
+            svg = render_barcode(product.barcode).decode("utf-8")
+        except (BarcodeError, ValueError, UnicodeError, TypeError):
+            return HttpResponseBadRequest("This barcode cannot be rendered as Code 128.")
         html = render_to_string("products/barcode_labels.html", {
             "product": product, "copies": range(copies), "barcode_svg": svg, "show_price": show_price,
         }, request=request)
         return HttpResponse(html)
+
+
+class ProductBarcodeImageView(StaffRequiredMixin, View):
+    def get(self, request, pk, image_format):
+        product = get_object_or_404(Product, pk=pk)
+        try:
+            content = render_barcode(product.barcode, image_format)
+        except (BarcodeError, ValueError, UnicodeError, TypeError):
+            return HttpResponseBadRequest("This barcode cannot be rendered in the requested format.")
+        mime = "image/png" if image_format == "png" else "image/svg+xml"
+        response = HttpResponse(content, content_type=mime)
+        disposition = "inline" if request.GET.get("inline") == "1" else "attachment"
+        filename = slugify(product.sku) or f"product-{product.pk}"
+        response["Content-Disposition"] = f'{disposition}; filename="{filename}-barcode.{image_format}"'
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
+
+
+class ProductBarcodePreviewView(StaffRequiredMixin, View):
+    def get(self, request):
+        value = request.GET.get("value", "")
+        if not value or len(value) > 64:
+            return HttpResponseBadRequest("Enter a barcode of 1 to 64 characters.")
+        try:
+            content = render_barcode(value, "png")
+        except (BarcodeError, ValueError, UnicodeError, TypeError):
+            return HttpResponseBadRequest("This value cannot be rendered as Code 128.")
+        return HttpResponse(content, content_type="image/png")
+
+
+class BarcodeManagementView(StaffRequiredMixin, View):
+    template_name = "products/barcode_management.html"
+    max_labels = 500
+
+    def get_queryset(self, request):
+        query = request.GET.get("q", "").strip()[:100]
+        products = Product.objects.all().order_by("name", "pk")
+        if query:
+            products = products.filter(Q(name__icontains=query) | Q(sku__icontains=query) | Q(barcode__icontains=query))
+        return products
+
+    def context(self, request, *, form=None, selected=None, labels=None, message=""):
+        products = self.get_queryset(request)
+        selected_ids = set(selected or [])
+        for product in products[:200]:
+            product.barcode_source = "Manufacturer" if product.has_manufacturer_barcode else "Internal"
+            product.selected_for_print = product.pk in selected_ids
+        all_products = Product.objects.all()
+        return {
+            "products": products[:200], "query": request.GET.get("q", "").strip(),
+            "total_barcodes": all_products.exclude(barcode__isnull=True).exclude(barcode="").count(),
+            "manufacturer_barcodes": all_products.filter(has_manufacturer_barcode=True).exclude(barcode__isnull=True).exclude(barcode="").count(),
+            "internal_barcodes": all_products.filter(has_manufacturer_barcode=False).exclude(barcode__isnull=True).exclude(barcode="").count(),
+            "missing_barcodes": all_products.filter(Q(barcode__isnull=True) | Q(barcode="")).count(),
+            "sheet_form": form or BarcodeSheetForm(), "labels": labels, "message": message,
+        }
+
+    def get(self, request):
+        return render(request, self.template_name, self.context(request))
+
+    def _selected(self, request):
+        if request.POST.get("select_all") == "on":
+            return self.get_queryset(request)[:200]
+        raw_ids = request.POST.getlist("products")[:200]
+        ids = [int(value) for value in raw_ids if value.isdigit()]
+        return Product.objects.filter(pk__in=ids).order_by("name", "pk")
+
+    def post(self, request):
+        action = request.POST.get("action", "print")
+        if action == "generate_missing":
+            if not request.user.is_owner:
+                raise PermissionDenied
+            missing = self.get_queryset(request).filter(Q(barcode__isnull=True) | Q(barcode=""))[:200]
+            for product in missing:
+                product.has_manufacturer_barcode = False
+                product.save(update_fields=["barcode", "has_manufacturer_barcode", "updated_at"])
+            from urllib.parse import urlencode
+            return redirect(f"{reverse('products:barcodes')}?{urlencode({'q': request.GET.get('q', '')})}")
+
+        selected = list(self._selected(request))
+        if not selected:
+            return render(request, self.template_name, self.context(request, message="Select at least one product."), status=400)
+        labels = []
+        for product in selected:
+            if not product.barcode:
+                continue
+            try:
+                copies = int(request.POST.get(f"copies_{product.pk}", "1"))
+            except (TypeError, ValueError):
+                copies = 1
+            copies = max(1, min(copies, self.max_labels))
+            if len(labels) + copies > self.max_labels:
+                return render(request, self.template_name, self.context(request, selected=[p.pk for p in selected],
+                    message=f"A print job is limited to {self.max_labels} labels."), status=400)
+            try:
+                svg = render_barcode(product.barcode).decode("utf-8")
+            except (BarcodeError, ValueError, UnicodeError, TypeError):
+                continue
+            labels.extend({"product": product, "barcode_svg": svg} for _ in range(copies))
+        if not labels:
+            return render(request, self.template_name, self.context(request, selected=[p.pk for p in selected],
+                message="Selected products do not have barcodes that can be printed."), status=400)
+
+        if action == "thermal":
+            thermal_form = ThermalLabelForm(request.POST)
+            if not thermal_form.is_valid():
+                return render(request, self.template_name, self.context(request, form=BarcodeSheetForm(request.POST),
+                    selected=[p.pk for p in selected], message="Check the thermal label settings."), status=400)
+            settings = thermal_form.cleaned_data
+            thermal_labels = [{"barcode": item["product"].barcode, "name": item["product"].name} for item in labels]
+            try:
+                payload = thermal_job(thermal_labels, printer=settings["printer"], width_mm=float(settings["thermal_width"]),
+                                      height_mm=float(settings["thermal_height"]))
+            except ValueError as exc:
+                return render(request, self.template_name, self.context(request, selected=[p.pk for p in selected], message=str(exc)), status=400)
+            response = HttpResponse(payload, content_type="text/plain; charset=us-ascii")
+            response["Content-Disposition"] = f'attachment; filename="smartmart-labels.{settings["printer"]}"'
+            return response
+
+        form = BarcodeSheetForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, self.context(request, form=form, selected=[p.pk for p in selected],
+                message="Check the label sheet measurements."), status=400)
+        return render(request, "products/barcode_sheet.html", {
+            "labels": labels, "settings": form.cleaned_data, "currency": "Rs.",
+        })
 
 
 class ProductCreateView(OwnerRequiredMixin, CreateView):

@@ -8,11 +8,12 @@
     <p>{{ object.description|default:"No description." }}</p>
     <dl class="grid grid-cols-2 gap-2 mt-4">
       <dt class="help">SKU</dt><dd>{{ object.sku }}</dd>
-      <dt class="help">Barcode</dt><dd>{{ object.barcode|default:"—" }}</dd>
+      <dt class="help">Barcode</dt><dd><span data-copy-barcode="{{ object.barcode|default:'' }}">{{ object.barcode|default:"—" }}</span> {% if object.barcode %}<button type="button" class="btn btn-outline" data-copy-barcode="{{ object.barcode }}">Copy</button><span class="help">{% if object.has_manufacturer_barcode %}Manufacturer{% else %}Internal Code 128{% endif %}</span>{% endif %}</dd>
+      {% if object.barcode and not object.has_manufacturer_barcode %}<dt class="help">Barcode image</dt><dd>{% if object.barcode_image %}<img src="{{ object.barcode_image.url }}" alt="Barcode for {{ object.name }}" class="max-h-16 max-w-full">{% else %}<img src="{% url 'products:barcode_image' object.pk 'png' %}?inline=1" alt="Barcode for {{ object.name }}" class="max-h-16 max-w-full">{% endif %}</dd>{% endif %}
       <dt class="help">Product code</dt><dd>{{ object.product_code }}</dd>
       <dt class="help">Category</dt><dd>{{ object.category|default:"â€”" }}</dd>
       <dt class="help">Selling price</dt><dd>{{ CURRENCY }} {{ object.selling_price }}{% if object.discount_percent %} â†’ {{ CURRENCY }} {{ object.discounted_price }} ({{ object.discount_percent }}% off){% endif %}</dd>
-      {% if user.is_owner %}<dt class="help">Average cost</dt><dd>{{ CURRENCY }} {{ object.cost_price }}</dd>
+      {% if user.is_owner %}<dt class="help">Latest purchase cost</dt><dd>{{ CURRENCY }} {{ object.cost_price }}</dd>
       <dt class="help">Stock value</dt><dd>{{ CURRENCY }} {{ object.stock_value }}</dd>{% endif %}
       <dt class="help">Shop visibility</dt><dd>{% if object.is_online and not object.is_archived %}Visible in shop{% else %}Hidden from shop{% endif %}</dd>
     </dl>
@@ -66,5 +67,6 @@
     <tbody>{% for i in sales_history %}<tr class="border-t border-line"><td class="py-2"><a href="{% url 'sales:receipt' i.sale_id %}">{{ i.sale.receipt_number }}</a></td><td>{{ i.sale.created_at|date:"d M Y H:i" }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} ({{ i.converted_quantity }} {{ object.base_unit }})</td><td>{{ CURRENCY }} {{ i.sold_price }}</td></tr>{% endfor %}</tbody>
   </table></div>{% else %}<p class="help">No sales yet.</p>{% endif %}
 </div>
+<script>document.querySelectorAll('[data-copy-barcode]').forEach(function (button) { button.addEventListener('click', function () { navigator.clipboard.writeText(button.dataset.copyBarcode).then(function () { button.textContent = 'Copied'; }).catch(function () { window.prompt('Copy barcode number', button.dataset.copyBarcode); }); }); });</script>
 {% endblock %}
 

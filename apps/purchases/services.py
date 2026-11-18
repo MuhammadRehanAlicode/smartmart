@@ -1,5 +1,5 @@
 from django.db import transaction
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.utils import timezone
 
@@ -26,10 +26,14 @@ def receive_purchase(purchase_id, user):
     for item in items:
         conversion = item.conversion_factor or Decimal("1")
         base_qty = item.converted_quantity or item.quantity * conversion
-        effective_unit_cost = item.line_total / base_qty if base_qty else item.unit_cost / conversion
+        effective_unit_cost = (item.unit_cost / conversion).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         change_stock(item.product, base_qty, StockMovement.Type.PURCHASE, user=user,
                      reason=f"Purchase from {purchase.supplier.name}", reference=f"PUR-{purchase.pk}",
                      unit_cost=effective_unit_cost)
+        product = item.product.__class__.objects.select_for_update().get(pk=item.product_id)
+        product.cost_price = effective_unit_cost
+        product.selling_price = item.selling_price
+        product.save(update_fields=["cost_price", "selling_price", "updated_at"])
     purchase.status = Purchase.Status.RECEIVED
     purchase.received_at = timezone.now()
     purchase.save(update_fields=["status", "received_at"])

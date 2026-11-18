@@ -1,4 +1,7 @@
 from django.db.models import F, Q
+from django.http import JsonResponse
+from django.urls import reverse
+from django.views import View
 from django.views.generic import ListView, TemplateView
 
 from apps.accounts.permissions import StaffRequiredMixin
@@ -37,3 +40,24 @@ class StockAlertsView(StaffRequiredMixin, TemplateView):
         ctx["out_of_stock"] = live.filter(stock_quantity=0)
         ctx["low_stock"] = live.filter(stock_quantity__gt=0, stock_quantity__lte=F("low_stock_threshold"))
         return ctx
+
+
+class BarcodeLookupView(StaffRequiredMixin, View):
+    def get(self, request):
+        barcode = request.GET.get("barcode", "").strip()[:64]
+        if not barcode:
+            return JsonResponse({"error": "Enter or scan a barcode."}, status=400)
+        product = Product.objects.filter(barcode=barcode, is_archived=False).first()
+        if not product:
+            return JsonResponse({"error": f"No active product found for barcode {barcode}."}, status=404)
+        return JsonResponse({
+            "id": product.pk, "name": product.name, "sku": product.sku, "barcode": product.barcode,
+            "stock": str(product.stock_quantity), "base_unit": product.base_unit,
+            "detail_url": reverse("products:detail", args=[product.pk]),
+            "adjust_url": reverse("products:adjust", args=[product.pk]) if request.user.is_owner else "",
+            "cached": False,
+        })
+
+
+class BarcodeInventoryView(StaffRequiredMixin, TemplateView):
+    template_name = "inventory/barcode_lookup.html"

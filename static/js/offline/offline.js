@@ -77,10 +77,14 @@
     $$("form.js-add-form").forEach(function (f) {
       var d = f.dataset, input = f.querySelector('input[name="product_id"]'), id = input ? Number(input.value) : 0;
       if (!id || !d.price) return;
-      list.push({ id: id, name: d.productName, price: d.price, listPrice: d.listPrice || d.price, image: d.image || "", stock: Number(d.stock), sku: d.sku || "" });
+      list.push({ id: id, name: d.productName, price: d.price, listPrice: d.listPrice || d.price, image: d.image || "", stock: Number(d.stock), sku: d.sku || "", barcode: d.barcode || "", baseUnit: d.baseUnit || "PCS" });
     });
     if (!list.length) return;
     DB.run("products", "readwrite", function (s) { list.forEach(function (p) { s.products.put(p); }); }).catch(function () {});
+    DB.run("barcodeProducts", "readwrite", function (s) {
+      list.forEach(function (p) { s.barcodeProducts.put({ id: p.id, name: p.name, sku: p.sku, barcode: p.barcode,
+        stock: p.stock, base_unit: p.baseUnit, price: p.price, list_price: p.listPrice, cached_at: Date.now() }); });
+    }).catch(function () {});
   }
   function infoFromForm(form) {
     var d = form.dataset;

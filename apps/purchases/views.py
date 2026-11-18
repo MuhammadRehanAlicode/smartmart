@@ -3,8 +3,9 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 from django.views.generic import DetailView, ListView
-import json
 from decimal import Decimal, ROUND_HALF_UP
+from django.utils import timezone
+from django.http import JsonResponse
 
 from apps.accounts.permissions import OwnerRequiredMixin
 from apps.core.audit import log_action
@@ -41,16 +42,28 @@ class PurchaseDetailView(OwnerRequiredMixin, DetailView):
         return Purchase.objects.select_related("supplier").prefetch_related("items__product")
 
 
+class PurchaseProductStockView(OwnerRequiredMixin, View):
+    def get(self, request, pk):
+        product = get_object_or_404(Product, pk=pk, is_archived=False)
+        return JsonResponse({"stock": str(product.stock_quantity), "base_unit": product.base_unit})
+
+
 class PurchaseEditView(OwnerRequiredMixin, View):
     """Create (no pk) or edit (pk, pending only) a purchase with several line items."""
 
     def _render(self, request, form, formset, purchase):
         products = Product.objects.filter(is_archived=False).prefetch_related("unit_options")
-        units = {str(p.pk): {"base": p.base_unit, "units": [
-            {"code": u.unit_code, "label": u.get_unit_code_display(), "factor": str(u.conversion_factor)}
-            for u in p.unit_options.filter(purchase_enabled=True)]} for p in products}
+        units = {}
+        for product in products:
+            configured = list(product.unit_options.filter(purchase_enabled=True))
+            unit_data = [{"code": unit.unit_code, "label": unit.get_unit_code_display(),
+                          "factor": str(unit.conversion_factor)} for unit in configured]
+            if not any(unit["code"] == product.base_unit for unit in unit_data):
+                unit_data.append({"code": product.base_unit, "label": product.get_base_unit_display(), "factor": "1"})
+            units[str(product.pk)] = {"base": product.base_unit, "stock": str(product.stock_quantity), "units": unit_data}
         return render(request, "purchases/form.html", {"form": form, "formset": formset, "purchase": purchase,
-            "product_units_json": json.dumps(units)})
+            "purchase_date": purchase.created_at if purchase else timezone.localdate(),
+            "product_units_json": units})
 
     def get(self, request, pk=None):
         purchase = get_object_or_404(Purchase, pk=pk) if pk else None
@@ -69,7 +82,7 @@ class PurchaseEditView(OwnerRequiredMixin, View):
         formset = PurchaseItemFormSet(request.POST, instance=form.instance)
         if form.is_valid() and formset.is_valid():
             total = sum(
-                (f.cleaned_data["quantity"] * f.cleaned_data["unit_cost"] + (f.cleaned_data.get("box_cost") or 0))
+                (f.cleaned_data["quantity"] * f.cleaned_data["unit_cost"])
                     .quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 for f in formset
                 if f.cleaned_data and not f.cleaned_data.get("DELETE")

@@ -1,7 +1,7 @@
 {% load static %}
 <!doctype html>
 <html lang="en">
-<head>{% include "_head.html" %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=blue-theme-single-product-search-20261112"><title>{% block title %}Dashboard{% endblock %} · {{ STORE_NAME }}</title></head>
+<head>{% include "_head.html" %}<link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=purchase-items-no-scroll-20261118"><title>{% block title %}Dashboard{% endblock %} · {{ STORE_NAME }}</title></head>
 <body class="admin-ui">
 <div class="ad-app">
   <button id="sidebar-backdrop" class="ad-sidebar-backdrop" type="button" aria-label="Close navigation"></button>
@@ -18,6 +18,7 @@
       <a class="ad-nav-link {% if request.resolver_match.namespace == 'orders' %}is-active{% endif %}" href="{% url 'orders:list' %}"><svg viewBox="0 0 24 24"><path d="M3 3h2l2.5 12h11L21 7H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Online orders</span></a>
       <a class="ad-nav-link {% if request.resolver_match.namespace == 'sales' and request.resolver_match.url_name != 'pos' %}is-active{% endif %}" href="{% url 'sales:list' %}"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg><span>Sales</span></a>
       <a class="ad-nav-link {% if request.resolver_match.namespace == 'inventory' %}is-active{% endif %}" href="{% url 'inventory:alerts' %}"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM8 5V3h8v2M8 10h8M8 14h5"/></svg><span>Inventory</span></a>
+      <a class="ad-nav-link {% if request.resolver_match.url_name == 'barcode_lookup' or request.resolver_match.url_name == 'barcodes' %}is-active{% endif %}" href="{% url 'inventory:barcode_lookup' %}"><svg viewBox="0 0 24 24"><path d="M3 5v14M6 5v14M9 5v14M12 5v14M16 5v14M19 5v14M22 5v14"/></svg><span>Barcode lookup</span></a>
       {% if user.is_owner %}
       <a class="ad-nav-link {% if request.resolver_match.namespace == 'suppliers' %}is-active{% endif %}" href="{% url 'suppliers:list' %}"><svg viewBox="0 0 24 24"><path d="M3 7h11v11H3zM14 11h4l3 3v4h-7"/><circle cx="7" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg><span>Suppliers</span></a>
       <a class="ad-nav-link {% if request.resolver_match.namespace == 'reports' %}is-active{% endif %}" href="{% url 'reports:index' %}"><svg viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-8M22 20V3"/></svg><span>Reports</span></a>

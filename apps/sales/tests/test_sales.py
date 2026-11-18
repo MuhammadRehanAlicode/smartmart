@@ -213,6 +213,20 @@ class SalesViewTests(SalesBase):
         self.assertEqual(self.client.get(reverse("sales:search"), {"q": "missing", "scan": "1"}).json()["results"], [])
         self.assertEqual(self.client.get(reverse("sales:search"), {"q": ""}).json()["results"], [])
 
+    def test_repeated_scans_merge_same_product_and_deduct_stock_once(self):
+        sale = self.sell([(self.rice.pk, 1), (self.rice.pk, 1)])
+        self.assertEqual(sale.items.count(), 1)
+        self.assertEqual(sale.items.get().quantity, Decimal("2"))
+        self.assertEqual(self.stock(self.rice), Decimal("8"))
+        self.assertEqual(StockMovement.objects.filter(reference=sale.receipt_number).count(), 1)
+
+    def test_pos_page_keeps_usb_input_and_includes_camera_scanner(self):
+        self.client.force_login(self.cash)
+        response = self.client.get(reverse("sales:pos"))
+        self.assertContains(response, "pos-scanner")
+        self.assertContains(response, "Start camera scanner")
+        self.assertContains(response, "dist/barcode-camera.js")
+
     def test_receipt_and_pos_pages_render(self):
         s = self.sell([(self.rice.pk, 1)])
         self.client.force_login(self.cash)

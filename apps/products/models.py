@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
+from django.core.files.base import ContentFile
 
 MONEY = {"max_digits": 12, "decimal_places": 2}
 
@@ -40,6 +41,7 @@ class Product(models.Model):
     class Unit(models.TextChoices):
         PCS = "PCS", "Piece (PCS)"
         CTN = "CTN", "Carton (CTN)"
+        PACK = "PK", "Pack (PK)"
         KG = "KG", "Kilogram (KG)"
 
     name = models.CharField(max_length=200)
@@ -48,13 +50,15 @@ class Product(models.Model):
     sku = models.CharField("SKU", max_length=50, unique=True)
     barcode = models.CharField(max_length=64, unique=True, null=True, blank=True)
     has_manufacturer_barcode = models.BooleanField(default=False)
+    manufacturer = models.CharField(max_length=160, blank=True)
+    barcode_image = models.ImageField(upload_to="product_barcodes/", blank=True)
     product_code = models.CharField(max_length=32, unique=True, blank=True, default="")
-    base_unit = models.CharField(max_length=3, choices=(("PCS", "Piece (PCS)"), ("KG", "Kilogram (KG)")), default="PCS")
+    base_unit = models.CharField(max_length=3, choices=Unit.choices, default="PCS")
     image = models.ImageField(
         upload_to="products/", blank=True,
         validators=[FileExtensionValidator(["jpg", "jpeg", "png", "webp"]), validate_image_size],
     )
-    # cost_price is the weighted-average cost (see docs/VALUATION.md).
+    # Latest received purchase cost, expressed per base unit.
     cost_price = models.DecimalField(**MONEY, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0"))])
     selling_price = models.DecimalField(**MONEY, validators=[MinValueValidator(Decimal("0.01"))])
     discount_percent = models.DecimalField(
@@ -73,7 +77,7 @@ class Product(models.Model):
         ordering = ["name"]
 
     def save(self, *args, **kwargs):
-        self.barcode = (self.barcode or "").strip() or None
+        self.barcode = None if self.barcode in (None, "") else self.barcode
         creating = self._state.adding
         if creating and self.barcode:
             self.has_manufacturer_barcode = True
@@ -87,6 +91,7 @@ class Product(models.Model):
                     self.barcode = candidate
                     break
             super().save(update_fields=["product_code", "barcode", "has_manufacturer_barcode", "updated_at"])
+            self._save_generated_barcode_image()
             return
         if not creating and not self.has_manufacturer_barcode and not self.barcode:
             while True:
@@ -101,6 +106,14 @@ class Product(models.Model):
             super().save(update_fields=["product_code", "updated_at"])
             return
         super().save(*args, **kwargs)
+        if not self.has_manufacturer_barcode and self.barcode and not self.barcode_image:
+            self._save_generated_barcode_image()
+
+    def _save_generated_barcode_image(self):
+        from .barcodes import render_barcode
+        self.barcode_image.save(f"{slugify(self.sku) or self.pk}-barcode.png",
+                                ContentFile(render_barcode(self.barcode, "png")), save=False)
+        super().save(update_fields=["barcode_image", "updated_at"])
 
     def __str__(self):
         return f"{self.name} ({self.sku})"

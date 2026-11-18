@@ -11,7 +11,7 @@ DJANGO_SECRET_KEY=<unique long random value>
 DJANGO_ALLOWED_HOSTS=<Railway public domain, without https://>
 ```
 
-Railway runs the CSS build and `collectstatic` during build, runs `migrate` as a pre-deploy command, and starts Gunicorn on
+Railway builds CSS and bundled ZXing camera scanning and runs `collectstatic` during build, runs `migrate` as a pre-deploy command, and starts Gunicorn on
 Railway's assigned `$PORT`. Production settings also recognize `RAILWAY_PUBLIC_DOMAIN` for allowed hosts and CSRF origins.
 Add storefront and mail variables from `.env.example` as needed. Do not set `DJANGO_DEBUG=True`.
 
@@ -36,7 +36,7 @@ storage before they can be relied on in production. The bundled `media/catalog/`
    ```
 5. **Build & migrate**:
    ```bash
-   npm install && npm run build:css
+   npm install && npm run build:css && npm run build:js
    venv/bin/python manage.py migrate
    venv/bin/python manage.py collectstatic --noinput
    venv/bin/python manage.py createsuperuser        # becomes the Owner

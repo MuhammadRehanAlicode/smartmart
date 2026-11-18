@@ -1,0 +1,17 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block title %}Inventory barcode lookup{% endblock %}
+{% block heading %}Inventory barcode lookup{% endblock %}
+{% block breadcrumb %}Inventory / Barcode lookup{% endblock %}
+{% block content %}
+<section id="inventory-barcode" class="grid gap-4" data-lookup-url="{% url 'inventory:barcode_lookup_api' %}" data-barcode-camera>
+  <div class="card grid gap-3">
+    <p class="help">Scan with a USB scanner, enter a barcode, or use a camera. Stock is read from the inventory database when online.</p>
+    <form data-inventory-scan class="flex flex-wrap gap-2"><label class="sr-only" for="inventory-barcode-input">Barcode</label><input id="inventory-barcode-input" class="input min-w-64 flex-1" autocomplete="off" placeholder="Scan or type barcode"><button class="btn btn-primary" type="submit">Look up product</button></form>
+    <div class="grid gap-2 sm:grid-cols-2"><button class="btn btn-outline" type="button" data-camera-start>Start camera scanner</button><button class="btn btn-outline" type="button" data-camera-stop>Stop camera scanner</button><select class="input sm:col-span-2" data-camera-select aria-label="Select camera" hidden></select><p class="help sm:col-span-2" data-camera-status aria-live="polite"></p><video class="w-full max-h-64 rounded-xl bg-black sm:col-span-2" playsinline muted aria-label="Camera barcode preview"></video></div>
+  </div>
+  <p id="inventory-barcode-message" class="field-error" role="status" aria-live="polite"></p>
+  <article id="inventory-barcode-result" class="card" hidden></article>
+</section>
+<script src="{% static 'js/offline/offline-db.js' %}"></script><script src="{% static 'dist/barcode-camera.js' %}"></script><script src="{% static 'js/inventory-barcode.js' %}"></script>
+{% endblock %}

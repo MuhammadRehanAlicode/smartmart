@@ -45,13 +45,25 @@ class PurchaseServiceTests(PurchaseBase):
         self.assertEqual(self.p1.cost_price, Decimal("100.00"))
         self.assertEqual(PurchaseItem.objects.get(purchase=pur).converted_quantity, Decimal("60"))
 
-    def test_purchase_box_cost_is_included_in_weighted_average_cost(self):
+    def test_purchase_sets_latest_unit_cost_without_weighting_or_box_cost(self):
         pur = Purchase.objects.create(supplier=self.supplier)
         PurchaseItem.objects.create(purchase=pur, product=self.p1, quantity=2,
                                     unit_cost=Decimal("10"), box_cost=Decimal("4"))
         receive_purchase(pur.pk, self.owner)
         self.p1.refresh_from_db()
-        self.assertEqual(self.p1.cost_price, Decimal("12.00"))
+        self.assertEqual(self.p1.cost_price, Decimal("10.00"))
+
+    def test_latest_received_purchase_sets_cost_and_selling_price(self):
+        first = self.make_purchase()
+        receive_purchase(first.pk, self.owner)
+        second = Purchase.objects.create(supplier=self.supplier)
+        PurchaseItem.objects.create(purchase=second, product=self.p1, quantity=2,
+            unit_cost=Decimal("120"), selling_price=Decimal("150"))
+        self.assertEqual(self.p1.__class__.objects.get(pk=self.p1.pk).selling_price, Decimal("120"))
+        receive_purchase(second.pk, self.owner)
+        self.p1.refresh_from_db()
+        self.assertEqual(self.p1.cost_price, Decimal("120.00"))
+        self.assertEqual(self.p1.selling_price, Decimal("150.00"))
 
     def test_total(self):
         self.assertEqual(self.make_purchase().total, Decimal("1202.50"))
@@ -60,6 +72,13 @@ class PurchaseServiceTests(PurchaseBase):
         self.make_purchase()
         self.p1.refresh_from_db()
         self.assertEqual(self.p1.stock_quantity, 0)
+
+    def test_pending_purchase_preserves_both_product_prices(self):
+        pur = Purchase.objects.create(supplier=self.supplier)
+        PurchaseItem.objects.create(purchase=pur, product=self.p1, quantity=1,
+            unit_cost=Decimal("80"), selling_price=Decimal("100"))
+        self.p1.refresh_from_db()
+        self.assertEqual((self.p1.cost_price, self.p1.selling_price), (Decimal("0.00"), Decimal("120.00")))
 
     def test_receive_increases_stock_and_sets_cost(self):
         pur = self.make_purchase()
@@ -85,6 +104,7 @@ class PurchaseServiceTests(PurchaseBase):
             receive_purchase(pur.pk, self.owner)
         self.p1.refresh_from_db()
         self.assertEqual(self.p1.stock_quantity, 0)
+        self.assertEqual((self.p1.cost_price, self.p1.selling_price), (Decimal("0.00"), Decimal("120.00")))
 
     def test_empty_purchase_cannot_be_received(self):
         pur = Purchase.objects.create(supplier=self.supplier)
@@ -117,6 +137,49 @@ class PurchaseViewTests(PurchaseBase):
         self.assertEqual(pur.total, Decimal("50.00"))
         self.p1.refresh_from_db()
         self.assertEqual(self.p1.stock_quantity, 0)
+
+    def test_purchase_form_shows_ledger_opening_stock_and_closing_preview(self):
+        from apps.inventory.services import change_stock
+        change_stock(self.p1, 15, StockMovement.Type.OPENING)
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("purchases:create"))
+        self.assertContains(response, "Opening stock")
+        self.assertContains(response, "Closing stock")
+        self.assertContains(response, '"stock": "15.000000"')
+
+    def test_product_stock_endpoint_returns_current_available_stock(self):
+        from apps.inventory.services import change_stock
+        change_stock(self.p1, 15, StockMovement.Type.OPENING)
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("purchases:product_stock", args=[self.p1.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"stock": "15.000000", "base_unit": self.p1.base_unit})
+
+    def test_pack_requires_explicit_conversion_and_stores_converted_quantity(self):
+        self.client.force_login(self.owner)
+        payload = self.data()
+        payload["items-0-unit_code"] = Product.Unit.PACK
+        payload["items-0-quantity"] = "3"
+        response = self.client.post(reverse("purchases:create"), payload)
+        self.assertEqual(Purchase.objects.count(), 0)
+        self.assertContains(response, "Enter how many base units are in one pack.")
+
+        payload["items-0-conversion_factor"] = "6"
+        response = self.client.post(reverse("purchases:create"), payload)
+        purchase = Purchase.objects.get()
+        self.assertRedirects(response, reverse("purchases:detail", args=[purchase.pk]))
+        item = purchase.items.get(product=self.p1)
+        self.assertEqual(item.converted_quantity, Decimal("18.000000"))
+
+    def test_purchase_form_has_no_other_cost_and_clears_legacy_cost_on_save(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("purchases:create"))
+        self.assertNotContains(response, "Other Cost")
+        payload = self.data()
+        payload["items-0-box_cost"] = "25"
+        self.client.post(reverse("purchases:create"), payload)
+        item = PurchaseItem.objects.get(product=self.p1)
+        self.assertEqual(item.box_cost, Decimal("0.00"))
 
     def test_carton_purchase_form_stores_original_and_converted_quantities(self):
         ProductUnit.objects.create(product=self.p1, unit_code=Product.Unit.CTN,

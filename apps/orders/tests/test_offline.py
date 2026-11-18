@@ -127,6 +127,7 @@ class OfflineOrderTests(OrderBase):
         self.assertIn("Only 10 of", body["reason"])
         self.assertEqual((Order.objects.count(), self.stock(self.rice), self.stock(self.tea)), (0, 10, 3))
         self.assertEqual(OfflineOrderSync.objects.get().outcome, "rejected")
+        self.assertEqual(OfflineOrderSync.objects.get().details["items"][0]["available"], "10.000000")
 
     def test_rejection_is_final_for_the_same_uuid(self):
         key = uuid.uuid4()

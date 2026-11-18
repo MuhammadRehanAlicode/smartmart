@@ -1,9 +1,12 @@
-<div class="grid gap-2 md:grid-cols-12 items-end formset-row border-t border-line pt-3 mt-3">
+<tr class="formset-row align-top" data-purchase-row>
   {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-  <div class="md:col-span-4"><label class="label" for="{{ form.product.id_for_label }}-search">Product</label><div class="purchase-product-picker" data-product-picker><input id="{{ form.product.id_for_label }}-search" class="input" type="search" placeholder="Search products..." autocomplete="off" data-product-search>{{ form.product }}{% for e in form.product.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div></div>
-  <div class="md:col-span-1"><label class="label" for="{{ form.quantity.id_for_label }}">Qty</label>{{ form.quantity }}{% for e in form.quantity.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-  <div class="md:col-span-2"><label class="label" for="{{ form.unit_code.id_for_label }}">Unit</label>{{ form.unit_code }}{% for e in form.unit_code.errors %}<p class="field-error">{{ e }}</p>{% endfor %}<p class="help" data-conversion-hint></p></div>
-  <div class="md:col-span-2"><label class="label" for="{{ form.unit_cost.id_for_label }}">Cost / unit</label>{{ form.unit_cost }}{% for e in form.unit_cost.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-  <div class="md:col-span-2"><label class="label" for="{{ form.box_cost.id_for_label }}">Box cost</label>{{ form.box_cost }}{% for e in form.box_cost.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div>
-  <div class="md:col-span-1">{% if form.DELETE %}<label class="help"><input type="checkbox" name="{{ form.DELETE.html_name }}" id="{{ form.DELETE.id_for_label }}"> Remove</label>{% endif %}</div>
-</div>
+  <td data-label="Product"><div class="purchase-product-picker" data-product-picker><input id="{{ form.product.id_for_label }}-search" class="input" type="search" placeholder="Find a product…" autocomplete="off" data-product-search aria-label="Search products">{{ form.product }}</div>{% for e in form.product.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</td>
+  <td data-label="Opening stock"><output class="stock-preview" data-opening-stock>—</output><span class="help" data-opening-unit></span></td>
+  <td data-label="Purchase quantity">{{ form.quantity }}{% for e in form.quantity.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</td>
+  <td data-label="Unit">{{ form.unit_code }}{% for e in form.unit_code.errors %}<p class="field-error">{{ e }}</p>{% endfor %}<div class="mt-2" data-conversion-factor-wrap hidden><label class="help" for="{{ form.conversion_factor.id_for_label }}">Base units per pack</label>{{ form.conversion_factor }}{% for e in form.conversion_factor.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</div><p class="help mt-1" data-conversion-hint></p></td>
+  <td data-label="Purchase cost">{{ form.unit_cost }}{% for e in form.unit_cost.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</td>
+  <td data-label="Selling price">{{ form.selling_price }}{% for e in form.selling_price.errors %}<p class="field-error">{{ e }}</p>{% endfor %}</td>
+  <td data-label="Closing stock"><output class="stock-preview stock-preview-blue" data-closing-stock>—</output><span class="help" data-closing-unit></span></td>
+  <td data-label="Subtotal"><span class="purchase-line-total" data-line-total>0.00</span></td>
+  <td data-label="Action">{% if form.DELETE %}<label class="purchase-remove">{{ form.DELETE }}<span>Remove</span></label>{% endif %}</td>
+</tr>

@@ -5,8 +5,8 @@
 <div class="card">
   <p>Supplier: <a href="{% url 'suppliers:detail' object.supplier_id %}">{{ object.supplier }}</a> · Invoice: {{ object.invoice_reference|default:"—" }}</p>
   <div class="overflow-x-auto my-4"><table class="w-full text-left">
-    <thead><tr class="help"><th class="py-2">Product</th><th>Qty</th><th>Unit cost</th><th>Box cost</th><th>Line total</th></tr></thead>
-    <tbody>{% for i in object.items.all %}<tr class="border-t border-line"><td class="py-2">{{ i.product.name }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} <span class="help">({{ i.converted_quantity }} {{ i.base_unit_label }})</span></td><td>{{ CURRENCY }} {{ i.unit_cost }}</td><td>{{ CURRENCY }} {{ i.box_cost }}</td><td>{{ CURRENCY }} {{ i.line_total }}</td></tr>{% endfor %}</tbody>
+    <thead><tr class="help"><th class="py-2">Product</th><th>Qty</th><th>Unit cost</th><th>Selling price / base unit</th><th>Box cost</th><th>Line total</th></tr></thead>
+    <tbody>{% for i in object.items.all %}<tr class="border-t border-line"><td class="py-2">{{ i.product.name }}</td><td>{{ i.quantity }} {{ i.get_unit_code_display }} <span class="help">({{ i.converted_quantity }} {{ i.base_unit_label }})</span></td><td>{{ CURRENCY }} {{ i.unit_cost }}</td><td>{{ CURRENCY }} {{ i.selling_price }}</td><td>{{ CURRENCY }} {{ i.box_cost }}</td><td>{{ CURRENCY }} {{ i.line_total }}</td></tr>{% endfor %}</tbody>
   </table></div>
   <p>Total: <strong>{{ CURRENCY }} {{ object.total }}</strong> · Paid: {{ CURRENCY }} {{ object.amount_paid }} · Due: {{ CURRENCY }} {{ object.balance_due }}</p>
   {% if object.status == "pending" %}

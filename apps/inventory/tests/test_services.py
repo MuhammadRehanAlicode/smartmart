@@ -43,19 +43,19 @@ class ChangeStockTests(TestCase):
         with self.assertRaises(ValueError):
             change_stock(product(), 0, T.ADJUSTMENT)
 
-    def test_weighted_average_cost(self):
+    def test_raw_stock_movements_do_not_change_latest_cost(self):
         p = product(cost_price=Decimal("10.00"))
         change_stock(p, 10, T.OPENING)
         change_stock(p, 10, T.PURCHASE, unit_cost=Decimal("20.00"))
         p.refresh_from_db()
-        self.assertEqual(p.cost_price, Decimal("15.00"))
+        self.assertEqual(p.cost_price, Decimal("10.00"))
         self.assertEqual(p.stock_quantity, 20)
 
-    def test_first_purchase_into_empty_stock_sets_cost(self):
+    def test_raw_purchase_movement_does_not_set_product_cost(self):
         p = product(cost_price=Decimal("0.00"))
         change_stock(p, 4, T.PURCHASE, unit_cost=Decimal("12.50"))
         p.refresh_from_db()
-        self.assertEqual(p.cost_price, Decimal("12.50"))
+        self.assertEqual(p.cost_price, Decimal("0.00"))
 
     def test_adjustment_requires_reason(self):
         p = product()

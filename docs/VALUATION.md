@@ -1,9 +1,8 @@
-# Inventory valuation method: weighted average cost
+# Inventory valuation method: latest received purchase cost
 
-- Each product stores one `cost_price`: the weighted-average unit cost of the units on hand.
-- When a purchase is **received**: `new_cost = (old_qty × old_cost + received_qty × unit_cost) ÷ (old_qty + received_qty)`, rounded to 2 decimals (half-up).
-- Sales and online orders (Phases 3 and 5) copy the product's current `cost_price` onto each sale line, so
-  cost of goods sold (COGS) never changes when later purchases change the average.
-- Stock value = Σ(stock_quantity × cost_price). Gross profit = revenue − COGS. Net profit = gross profit − recorded expenses.
-- Stock adjustments and returns change quantity only; they do not alter the average cost.
-- Rounding note: because the average is rounded to 2 decimals, stock value can differ from true purchase spend by a few paisa.
+- Each product stores `cost_price` as the unit cost per base unit from its latest received purchase.
+- A pending or cancelled purchase does not change stock or product prices. Receiving a purchase updates stock, cost, and selling price together.
+- A carton purchase cost is converted to a base-unit cost using its configured conversion factor. The purchase line keeps its original cost and quantity for history.
+- POS and delivered online order lines copy the product's current cost at the time of sale, so later receipts do not rewrite historical COGS.
+- Current stock value is `stock_quantity × cost_price`; it reflects the latest purchase cost, not a weighted average of remaining batches.
+- Stock adjustments and returns change quantity only; they do not change product cost or selling price.

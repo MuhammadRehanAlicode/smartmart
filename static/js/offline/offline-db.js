@@ -3,13 +3,14 @@
  * Stores:  orders   - orders placed offline (never deleted until the server has answered)
  *          cart     - the offline cart / local copy of the customer's cart
  *          products - minimal product info captured from pages so the cart can work offline
+ *          barcodeProducts - last-seen product details for staff barcode lookup while offline
  *          meta     - small key/value items (session, cartDirty, pricing, profile)
  * Never stored: card numbers, CVVs, passwords, tokens. Payment method is "cod" (cash on delivery) only.
  */
 (function (root) {
   "use strict";
   var NS = root.SmartMart = root.SmartMart || {};
-  var DB_NAME = "smartmart-offline", DB_VERSION = 1;
+  var DB_NAME = "smartmart-offline", DB_VERSION = 2;
   var dbPromise = null;
 
   var STATUS = { PENDING: "pending_sync", SYNCING: "syncing", CONFIRMED: "confirmed", REJECTED: "rejected", ATTENTION: "requires_attention" };
@@ -27,6 +28,7 @@
         }
         if (!db.objectStoreNames.contains("cart")) db.createObjectStore("cart", { keyPath: "productId" });
         if (!db.objectStoreNames.contains("products")) db.createObjectStore("products", { keyPath: "id" });
+        if (!db.objectStoreNames.contains("barcodeProducts")) db.createObjectStore("barcodeProducts", { keyPath: "id" });
         if (!db.objectStoreNames.contains("meta")) db.createObjectStore("meta", { keyPath: "key" });
       };
       req.onsuccess = function () {

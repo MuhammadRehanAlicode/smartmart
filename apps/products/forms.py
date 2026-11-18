@@ -26,26 +26,31 @@ class CategoryForm(forms.ModelForm):
 
 
 class ProductForm(forms.ModelForm):
+    barcode = forms.CharField(required=False, strip=False)
+
     class Meta:
         model = Product
         fields = (
-            "name", "description", "category", "sku", "base_unit", "has_manufacturer_barcode", "barcode", "image",
+            "name", "description", "category", "sku", "manufacturer", "has_manufacturer_barcode", "barcode", "image", "base_unit",
             "cost_price", "selling_price", "discount_percent",
             "low_stock_threshold", "is_online",
         )
         widgets = {"description": forms.Textarea(attrs={"rows": 3})}
         help_texts = {
             "sku": "Generated automatically when left blank.",
-            "has_manufacturer_barcode": "Select this when entering the barcode printed by the manufacturer. Otherwise an internal barcode is assigned automatically.",
-            "barcode": "Required for a manufacturer barcode. Internal barcodes are generated automatically.",
+            "manufacturer": "Enter the manufacturer to use its printed barcode.",
+            "barcode": "Enter the exact barcode printed on the package. Leave blank to generate one when no manufacturer is set.",
             "cost_price": "Updated automatically when purchases are received. Edit only to correct it.",
-            "selling_price": "Price for one base unit. Set separate carton prices in the unit settings below.",
+            "selling_price": "Price for one base unit. Purchase receipts update this from the purchase line.",
             "discount_percent": "0 to 100.",
         }
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.fields["category"].queryset = Category.objects.filter(is_active=True)
+        self.fields["has_manufacturer_barcode"].widget = forms.HiddenInput()
+        if self.instance.pk and not self.instance.has_manufacturer_barcode:
+            self.initial["barcode"] = ""
         self.fields["base_unit"].required = False
         self.fields["base_unit"].initial = self.instance.base_unit or Product.Unit.PCS
         style(self)
@@ -53,18 +58,31 @@ class ProductForm(forms.ModelForm):
     def clean_sku(self):
         return self.cleaned_data["sku"].strip().upper()
 
+    def save(self, commit=True):
+        product = super().save(commit=False)
+        product.has_manufacturer_barcode = bool(self.cleaned_data.get("manufacturer") or self.cleaned_data.get("has_manufacturer_barcode"))
+        if commit:
+            product.save()
+            self.save_m2m()
+        return product
+
     def clean_barcode(self):
-        barcode = (self.cleaned_data.get("barcode") or "").strip() or None
-        if self.cleaned_data.get("has_manufacturer_barcode") and not barcode:
+        barcode = self.cleaned_data.get("barcode")
+        if barcode == "":
+            barcode = None
+        if (self.cleaned_data.get("manufacturer") or self.cleaned_data.get("has_manufacturer_barcode")) and not barcode:
             raise forms.ValidationError("Enter the barcode printed on the product.")
-        if not self.cleaned_data.get("has_manufacturer_barcode"):
-            if self.instance.pk and self.instance.has_manufacturer_barcode:
-                return None
-            return self.instance.barcode if self.instance.pk else None
+        if not (self.cleaned_data.get("manufacturer") or self.cleaned_data.get("has_manufacturer_barcode")):
+            if self.instance.pk and self.instance.has_manufacturer_barcode and not self.instance.manufacturer:
+                return self.instance.barcode
+            return self.instance.barcode if self.instance.pk and not self.instance.has_manufacturer_barcode else None
         return barcode
 
     def clean(self):
         data = super().clean()
+        manufacturer = (data.get("manufacturer") or "").strip()
+        data["manufacturer"] = manufacturer
+        data["has_manufacturer_barcode"] = bool(manufacturer or data.get("has_manufacturer_barcode"))
         if not data.get("base_unit"):
             data["base_unit"] = self.instance.base_unit or Product.Unit.PCS
         if self.instance.pk and data.get("base_unit") and data["base_unit"] != self.instance.base_unit:
@@ -160,3 +178,28 @@ ProductUnitFormSet = inlineformset_factory(
     Product, ProductUnit, form=ProductUnitForm, formset=BaseProductUnitFormSet,
     extra=2, can_delete=True, max_num=3, validate_max=True,
 )
+
+
+class BarcodeSheetForm(forms.Form):
+    label_width = forms.DecimalField(min_value=20, max_value=70, max_digits=4, decimal_places=1, initial=50)
+    label_height = forms.DecimalField(min_value=12, max_value=90, max_digits=4, decimal_places=1, initial=30)
+    margin_x = forms.DecimalField(min_value=0, max_value=20, max_digits=4, decimal_places=1, initial=5)
+    margin_y = forms.DecimalField(min_value=0, max_value=20, max_digits=4, decimal_places=1, initial=5)
+    gap_x = forms.DecimalField(min_value=0, max_value=20, max_digits=4, decimal_places=1, initial=2)
+    gap_y = forms.DecimalField(min_value=0, max_value=20, max_digits=4, decimal_places=1, initial=2)
+    show_price = forms.BooleanField(required=False)
+    show_sku = forms.BooleanField(required=False, initial=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        style(self)
+
+
+class ThermalLabelForm(forms.Form):
+    printer = forms.ChoiceField(choices=(("tspl", "TSPL (TSC and compatible)"), ("zpl", "ZPL II (Zebra and compatible)")))
+    thermal_width = forms.DecimalField(min_value=20, max_value=104, max_digits=4, decimal_places=1, initial=50)
+    thermal_height = forms.DecimalField(min_value=10, max_value=150, max_digits=4, decimal_places=1, initial=30)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        style(self)

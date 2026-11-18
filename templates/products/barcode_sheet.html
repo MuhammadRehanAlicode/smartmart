@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SmartMart barcode sheet</title>
+<style>
+@page { size: A4 portrait; margin: 0; }
+* { box-sizing: border-box; }
+body { margin: 0; font: 8pt Arial, sans-serif; color: #111; }
+.toolbar { padding: 12px; background: #eef3fa; text-align: center; position: sticky; top: 0; }
+.sheet { width: 210mm; min-height: 297mm; padding: {{ settings.margin_y }}mm {{ settings.margin_x }}mm; display: grid; grid-template-columns: repeat(auto-fill, {{ settings.label_width }}mm); grid-auto-rows: {{ settings.label_height }}mm; column-gap: {{ settings.gap_x }}mm; row-gap: {{ settings.gap_y }}mm; align-content: start; }
+.label { width: {{ settings.label_width }}mm; height: {{ settings.label_height }}mm; padding: 1mm; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; text-align: center; break-inside: avoid; }
+.name { font-weight: 700; font-size: 9pt; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.sku, .price, .number { font-size: 7pt; white-space: nowrap; }
+.barcode svg { display: block; width: 100%; height: min(14mm, 55%); }
+@media screen { body { background: #dce4ef; } .sheet { margin: 12px auto; background: white; box-shadow: 0 2px 16px #26364a22; } }
+@media print { .toolbar { display: none; } .sheet { margin: 0; box-shadow: none; } }
+</style></head><body><div class="toolbar"><button type="button" onclick="window.print()">Print A4 barcode labels</button> <button type="button" onclick="history.back()">Back to barcode management</button> <span>{{ labels|length }} labels</span></div>
+<main class="sheet">{% for item in labels %}<article class="label"><div class="name">{{ item.product.name }}</div>{% if settings.show_sku %}<div class="sku">SKU {{ item.product.sku }}</div>{% endif %}<div class="barcode">{{ item.barcode_svg|safe }}</div><div class="number">{{ item.product.barcode }}</div>{% if settings.show_price %}<div class="price">{{ CURRENCY }} {{ item.product.discounted_price }}</div>{% endif %}</article>{% endfor %}</main>
+</body></html>

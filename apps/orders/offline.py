@@ -142,9 +142,10 @@ def _create(user, data):
                              "message": f"“{product.name}” is no longer available online."})
         elif product.stock_quantity < wanted[pid]:
             left = product.stock_quantity
-            problems.append({"product_id": pid, "code": "insufficient_stock", "available": left,
+            # JSONField only supports JSON primitives; keep stock quantities as strings (same as API payloads).
+            problems.append({"product_id": pid, "code": "insufficient_stock", "available": str(left),
                              "message": (f"“{product.name}” is out of stock." if left == 0
-                                         else f"Only {left} of “{product.name}” in stock (you ordered {wanted[pid]}).")})
+                                         else f"Only {format(left.normalize(), 'f')} of “{product.name}” in stock (you ordered {wanted[pid]}).")})
     if problems:
         raise _Stop("rejected", problems[0]["code"], " ".join(p["message"] for p in problems), items=problems)
 

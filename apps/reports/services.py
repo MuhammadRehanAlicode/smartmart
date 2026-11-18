@@ -107,10 +107,10 @@ def profit_report(start, end, params):
         ["Expenses", s.expenses, "Recorded expenses (stock purchases are not expenses)"],
         ["Net profit", s.net_profit, "Gross profit − expenses"],
         ["Purchase expenditure", s.purchase_spend, "Stock purchases received in the period (not a cost until sold)"],
-        ["Inventory value (now)", s.inventory_value, "Stock × weighted-average cost"],
+        ["Inventory value (now)", s.inventory_value, "Stock × latest purchase cost"],
     ]
     return ReportData("Profit report", [Section("", ["Measure", "Amount", "How it is calculated"], rows)],
-                      ["Valuation method: weighted average cost. See docs/ACCOUNTING.md and docs/VALUATION.md."])
+                      ["Valuation uses the latest received purchase cost per base unit. See docs/ACCOUNTING.md and docs/VALUATION.md."])
 
 
 def purchases_report(start, end, params):
@@ -182,9 +182,9 @@ def stock_valuation_report(start, end, params):
     prods = Product.objects.filter(stock_quantity__gt=0).order_by("name")
     rows = [[p.name, p.sku, p.stock_quantity, p.cost_price, p.stock_value, "Archived" if p.is_archived else ""] for p in prods]
     return ReportData("Stock valuation (current)", [Section(
-        "", ["Product", "SKU", "Quantity", "Average cost", "Value", "Note"], rows,
+        "", ["Product", "SKU", "Quantity", "Latest cost", "Value", "Note"], rows,
         ["Total", "", sum(r[2] for r in rows), "", inventory_value(), ""])],
-        ["Weighted-average cost method. This report shows stock as it is now; dates are ignored."])
+        ["Latest received purchase cost method. This report shows stock as it is now; dates are ignored."])
 
 
 def movements_report(start, end, params):

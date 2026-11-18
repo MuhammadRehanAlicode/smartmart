@@ -3,7 +3,7 @@
 One Django project with a shared database and shared inventory for:
 - **Back office** (owner and cashiers): products, suppliers, purchases, stock, POS sales with receipts, returns, expenses, orders, dashboard and reports.
 - **Online storefront** (customers): browse, cart, cash-on-delivery checkout, order tracking, profile.
-- **REST API** under `/api/v1/` (see `docs/API.md`).
+- **REST API** under `/api/v1/` (see `docs/API.md`). Barcode workflows and printer setup are in [`docs/BARCODES.md`](docs/BARCODES.md).
 
 ## First run
 ```bash
@@ -12,7 +12,7 @@ pip install -r requirements.txt
 cp .env.example .env                       # set DJANGO_SECRET_KEY
 python manage.py migrate
 python manage.py test                      # fix anything that fails before going further
-npm install && npm run build:css           # or keep USE_TAILWIND_CDN=True in .env while developing
+npm install && npm run build:css && npm run build:js
 python manage.py createsuperuser           # superusers are always the Owner role
 python manage.py runserver
 ```
@@ -30,7 +30,7 @@ DJANGO_SECRET_KEY=<generate a unique long random value>
 DJANGO_ALLOWED_HOSTS=<your Railway domain, without https://>
 ```
 
-Generate a Railway public domain for the web service. Railway builds CSS and static files, applies migrations before each
+Generate a Railway public domain for the web service. Railway builds CSS, camera-scanning JavaScript, and static files, applies migrations before each
 deploy, and starts Gunicorn using `railway.json`. Add any store, mail, and contact settings needed from `.env.example` in
 Railway's Variables panel. Do not set `DJANGO_DEBUG=True` in production.
 

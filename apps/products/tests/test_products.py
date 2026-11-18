@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from PIL import Image
@@ -13,6 +14,7 @@ from apps.core.models import AuditLog
 from apps.inventory.models import StockMovement
 from apps.products.forms import ProductForm
 from apps.products.models import Product
+from apps.products.barcodes import render_barcode, thermal_job
 
 PW = "S3cure-pass-987"
 
@@ -79,6 +81,123 @@ class ProductTests(TestCase):
         p = Product.objects.create(name="A", sku="A", selling_price=1, barcode="0001234567890")
         self.assertEqual(p.barcode, "0001234567890")
         self.assertTrue(p.has_manufacturer_barcode)
+
+    def test_carton_is_available_as_a_product_base_unit(self):
+        self.assertIn((Product.Unit.CTN, "Carton (CTN)"), Product._meta.get_field("base_unit").choices)
+        product = Product.objects.create(name="Case", sku="CASE", selling_price=10, base_unit=Product.Unit.CTN)
+        self.assertEqual(product.base_unit, Product.Unit.CTN)
+
+    def test_manufacturer_form_uses_exact_manual_barcode_and_rejects_duplicates(self):
+        Product.objects.create(name="Existing", sku="EX", selling_price=10, manufacturer="Maker", barcode="001234")
+        self.client.force_login(self.owner)
+        data = base_data(name="Second", sku="SECOND", manufacturer="Maker", barcode="001234", opening_stock="")
+        response = self.client.post(reverse("products:create"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Product.objects.count(), 1)
+        data.update(barcode=" 000987 ")
+        response = self.client.post(reverse("products:create"), data)
+        product = Product.objects.get(sku="SECOND")
+        self.assertRedirects(response, reverse("products:detail", args=[product.pk]))
+        self.assertEqual(product.barcode, " 000987 ")
+        self.assertTrue(product.has_manufacturer_barcode)
+
+    def test_internal_barcode_image_is_saved_with_product(self):
+        product = Product.objects.create(name="Internal", sku="INTERNAL", selling_price=10)
+        self.assertTrue(product.barcode_image.name.startswith("product_barcodes/internal-barcode"))
+        self.assertTrue(product.barcode_image.name.endswith(".png"))
+
+    def test_database_rejects_duplicate_barcode_values(self):
+        Product.objects.create(name="A", sku="A", selling_price=1, barcode="DUPLICATE")
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Product.objects.create(name="B", sku="B", selling_price=1, barcode="DUPLICATE")
+
+    def test_manufacturer_barcode_is_preserved_when_product_is_edited(self):
+        p = Product.objects.create(name="A", sku="A", selling_price=10, barcode="0001234567890")
+        self.client.force_login(self.owner)
+        data = base_data(name="A", sku="A", barcode="0001234567890", has_manufacturer_barcode="on", opening_stock="")
+        self.client.post(reverse("products:edit", args=[p.pk]), data)
+        p.refresh_from_db()
+        self.assertEqual(p.barcode, "0001234567890")
+        self.assertTrue(p.has_manufacturer_barcode)
+
+    def test_edit_does_not_regenerate_internal_barcode(self):
+        p = Product.objects.create(name="A", sku="A", selling_price=10)
+        original = p.barcode
+        self.client.force_login(self.owner)
+        self.client.post(reverse("products:edit", args=[p.pk]), base_data(name="A", sku="A", opening_stock=""))
+        p.refresh_from_db()
+        self.assertEqual(p.barcode, original)
+
+    def test_barcode_images_are_generated_as_svg_and_png(self):
+        product = Product.objects.create(name="A", sku="A", selling_price=10, barcode="0001234567890")
+        self.assertIn(b"<svg", render_barcode(product.barcode, "svg"))
+        self.assertTrue(render_barcode(product.barcode, "png").startswith(b"\x89PNG\r\n\x1a\n"))
+
+    def test_barcode_image_download_is_staff_only(self):
+        product = Product.objects.create(name="A", sku="A", selling_price=10)
+        url = reverse("products:barcode_image", args=[product.pk, "png"])
+        self.client.force_login(self.staff)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.client.force_login(self.cust)
+        self.assertEqual(self.client.get(url).status_code, 403)
+
+    def test_manual_barcode_preview_renders_without_saving_a_product(self):
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("products:barcode_preview"), {"value": "0001234567890"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertEqual(Product.objects.count(), 0)
+
+    def test_barcode_management_generates_only_missing_internal_values_and_has_permissions(self):
+        missing = Product.objects.create(name="Missing", sku="M", selling_price=10)
+        Product.objects.filter(pk=missing.pk).update(barcode=None)
+        registered = Product.objects.create(name="Registered", sku="R", selling_price=10, barcode="MANU-01")
+        self.client.force_login(self.staff)
+        page = self.client.get(reverse("products:barcodes"))
+        self.assertContains(page, "Registered barcodes")
+        self.assertEqual(self.client.post(reverse("products:barcodes"), {"action": "generate_missing"}).status_code, 403)
+        self.client.force_login(self.owner)
+        self.client.post(reverse("products:barcodes"), {"action": "generate_missing"})
+        missing.refresh_from_db(); registered.refresh_from_db()
+        self.assertTrue(missing.barcode)
+        self.assertEqual(registered.barcode, "MANU-01")
+
+    def test_bulk_a4_print_makes_requested_copy_count(self):
+        first = Product.objects.create(name="First", sku="F", selling_price=10)
+        second = Product.objects.create(name="Second", sku="S", selling_price=20)
+        self.client.force_login(self.staff)
+        response = self.client.post(reverse("products:barcodes"), {
+            "action": "print", "products": [first.pk, second.pk],
+            f"copies_{first.pk}": "5", f"copies_{second.pk}": "5",
+            "label_width": "50", "label_height": "30", "margin_x": "5", "margin_y": "5",
+            "gap_x": "2", "gap_y": "2", "show_sku": "on",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "size: A4 portrait")
+        self.assertEqual(response.content.count(b'class="label"'), 10)
+
+    def test_thermal_exports_create_tspl_and_zpl_downloads(self):
+        product = Product.objects.create(name="Tea", sku="T", selling_price=10, barcode="123456")
+        tspl = thermal_job([{"name": product.name, "barcode": product.barcode}], printer="tspl", width_mm=50, height_mm=30)
+        zpl = thermal_job([{"name": product.name, "barcode": product.barcode}], printer="zpl", width_mm=50, height_mm=30)
+        self.assertIn(b"SIZE 50 mm,30 mm", tspl)
+        self.assertIn(b"BARCODE 20,42,\"128\"", tspl)
+        self.assertIn(b"^BCN,80,Y,N,N", zpl)
+        self.assertIn(b"^FD123456^FS", zpl)
+        self.client.force_login(self.staff)
+        response = self.client.post(reverse("products:barcodes"), {
+            "action": "thermal", "products": [product.pk], f"copies_{product.pk}": "2",
+            "printer": "zpl", "thermal_width": "50", "thermal_height": "30",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Disposition"], 'attachment; filename="smartmart-labels.zpl"')
+        self.assertEqual(response.content.count(b"^BCN,80,Y,N,N"), 2)
+
+    def test_thermal_export_rejects_command_characters_for_tspl(self):
+        with self.assertRaises(ValueError):
+            thermal_job([{"name": "Bad", "barcode": '1";PRINT'}], printer="tspl", width_mm=50, height_mm=30)
 
     def test_duplicate_sku_rejected(self):
         self.client.force_login(self.owner)
