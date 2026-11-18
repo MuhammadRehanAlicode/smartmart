@@ -17,6 +17,7 @@ app_name = "api"
 urlpatterns = [
     path("auth/csrf/", views.CsrfView.as_view(), name="csrf"),
     path("auth/login/", views.LoginView.as_view(), name="login"),
+    path("auth/2fa/verify/", views.TwoFactorLoginView.as_view(), name="2fa-verify"),
     path("auth/logout/", views.LogoutView.as_view(), name="logout"),
     path("auth/me/", views.MeView.as_view(), name="me"),
     path("cart/", views.CartView.as_view(), name="cart"),

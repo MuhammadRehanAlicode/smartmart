@@ -17,6 +17,11 @@ class User(AbstractUser):
     role = models.CharField(max_length=16, choices=Role.choices, default=Role.CUSTOMER, db_index=True)
     phone = models.CharField(max_length=16, blank=True, validators=[phone_validator])
     duty = models.CharField(max_length=120, blank=True, default="")
+    totp_secret_encrypted = models.TextField(blank=True, default="")
+    totp_confirmed_at = models.DateTimeField(null=True, blank=True)
+    totp_last_step = models.BigIntegerField(null=True, blank=True)
+    totp_last_verified_at = models.DateTimeField(null=True, blank=True)
+    recovery_code_hashes = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         if self.is_superuser:

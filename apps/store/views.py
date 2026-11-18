@@ -17,6 +17,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 
+from apps.accounts.models import User
 from apps.accounts.permissions import OwnerRequiredMixin, RoleRequiredMixin
 from apps.customers.forms import ProfileForm
 from apps.customers.models import CustomerProfile
@@ -269,7 +270,12 @@ class HelpView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["about_stats"] = settings.ABOUT_STATS
+        context["about_stats"] = [
+            {"value": User.objects.filter(role=User.Role.CUSTOMER).count(), "label": "Customer accounts", "icon": "users"},
+            {"value": storefront_products().filter(stock_quantity__gt=0).count(), "label": "Products in stock", "icon": "grid"},
+            {"value": Category.objects.filter(is_active=True).count(), "label": "Active categories", "icon": "leaf"},
+            {"value": Order.objects.filter(status=Order.Status.DELIVERED).count(), "label": "Orders delivered", "icon": "truck"},
+        ]
         return context
 
 

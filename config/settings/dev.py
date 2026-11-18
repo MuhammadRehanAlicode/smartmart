@@ -3,6 +3,7 @@ import os
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 SECRET_KEY = SECRET_KEY or "dev-only-insecure-key"
+TOTP_ENCRYPTION_KEY = os.environ.get("TOTP_ENCRYPTION_KEY", "") or SECRET_KEY
 ALLOWED_HOSTS = ALLOWED_HOSTS or ["localhost", "127.0.0.1", "testserver"]
 
 # The generated Tailwind bundle is intentionally ignored by git. Use Tailwind's

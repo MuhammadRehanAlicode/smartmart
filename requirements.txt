@@ -7,3 +7,6 @@ python-dotenv>=1.0
 gunicorn>=22.0
 whitenoise>=6.6
 python-barcode>=0.15.1
+cryptography>=42.0
+qrcode[pil]>=7.4
+pyotp>=2.12,<3

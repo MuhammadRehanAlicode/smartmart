@@ -8,6 +8,7 @@ reference its `DATABASE_URL` variable from the Django service. Generate a public
 ```text
 DJANGO_SETTINGS_MODULE=config.settings.prod
 DJANGO_SECRET_KEY=<unique long random value>
+TOTP_ENCRYPTION_KEY=<unique stable random value; see docs/SECURITY_2FA.md>
 DJANGO_ALLOWED_HOSTS=<Railway public domain, without https://>
 ```
 
@@ -29,6 +30,7 @@ storage before they can be relied on in production. The bundled `media/catalog/`
    ```
    DJANGO_SETTINGS_MODULE=config.settings.prod
    DJANGO_SECRET_KEY=<python -c "import secrets;print(secrets.token_urlsafe(64))">
+   TOTP_ENCRYPTION_KEY=<python -c "import secrets;print(secrets.token_urlsafe(48))">
    DJANGO_ALLOWED_HOSTS=shop.example.com
    DATABASE_URL=postgres://smartmart_user:<password>@localhost:5432/smartmart
    ADMIN_URL=some-secret-path/

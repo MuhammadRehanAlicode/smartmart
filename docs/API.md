@@ -7,7 +7,11 @@ add a short-lived token scheme deliberately rather than loosening CSRF.
 ## Authentication flow
 1. `GET /auth/csrf/` → `{"csrfToken": "..."}` (also sets the `csrftoken` cookie).
 2. `POST /auth/login/` with header `X-CSRFToken: <token>` and body `{"username", "password"}` → user profile.
-   Limits: 10 requests/min per client; 5 wrong passwords per IP+username lock that pair for 15 minutes (HTTP 429).
+   Superusers receive HTTP 202 with `requires_2fa`, `setup_required` and `verification_url`; the password does not create
+   an authenticated session. Enroll through the web setup page if requested, or POST `{"code":"123456"}` to
+   `/auth/2fa/verify/` with the same CSRF token/session to complete sign-in. This returns the user profile after verification.
+   Limits: 10 requests/min per client; 5 wrong passwords per IP+username lock that pair for 15 minutes (HTTP 429), with a
+   separate 5-attempt, 15-minute authenticator/recovery-code limit per superuser.
 3. Send the `X-CSRFToken` header on every `POST/PATCH/PUT/DELETE`.
 4. `POST /auth/logout/` → 204.  `GET|PATCH /auth/me/` → own profile (`first_name,last_name,email,phone`; role is read-only).
 

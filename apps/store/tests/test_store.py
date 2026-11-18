@@ -36,6 +36,14 @@ class StorefrontTests(OrderBase):
         self.assertContains(self.client.get(reverse("store:contact")), "contact-shopping-cart.webp")
         self.assertEqual(self.client.get(reverse("store:product", args=[self.rice.pk])).status_code, 200)
 
+    def test_about_statistics_are_real_and_payment_support_copy_is_accurate(self):
+        response = self.client.get(reverse("store:help"))
+        stats = response.context["about_stats"]
+        self.assertEqual([row["value"] for row in stats], [2, 3, 0, 0])
+        self.assertContains(response, "Cash on delivery")
+        self.assertNotContains(response, "24/7 Support")
+        self.assertNotContains(response, "Secure Payments")
+
     def test_home_hero_renders_all_uploaded_banners_and_controls(self):
         response = self.client.get(reverse("store:home"))
         html = response.content.decode()

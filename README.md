@@ -81,8 +81,10 @@ docs/              API.md, ACCOUNTING.md, VALUATION.md, BACKUP_RESTORE.md, DEPLO
 Hashed passwords with Django validators, CSRF on every form and API write, session cookies HttpOnly/SameSite, HTTPS-only
 cookies and HSTS in production, per-IP+username login lockout and API throttling, image type/size validation, security
 headers, audit log of important changes and logins (never passwords), no secrets in Git (`.env`, `.gitignore`), custom
-error pages that leak nothing, configurable admin URL. Remaining risks to review yourself: no Content-Security-Policy
-(templates use some inline scripts), lockout needs a shared cache (Redis) with multiple workers, no two-factor login.
+error pages that leak nothing, configurable admin URL. Superuser sign-ins require a Google Authenticator-compatible
+TOTP challenge; encrypted authenticator secrets, replay checks, single-use recovery codes and verified-session middleware
+protect dashboard, admin and API access. See [Two-factor authentication](docs/SECURITY_2FA.md). Remaining risks to review:
+no Content-Security-Policy (templates use some inline scripts), lockout needs a shared cache (Redis) with multiple workers.
 
 ## Known gaps
 Not built: returns of already-delivered online orders (handled by phone per the Help page), a password-change/reset page,

@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from rest_framework import mixins, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import action
@@ -17,6 +18,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.accounts import lockout
+from apps.accounts import two_factor
 from apps.accounts.models import User
 from apps.core.audit import log_action
 from apps.finance.calculations import summary
@@ -86,7 +88,32 @@ class LoginView(APIView):
             lockout.register_failure(request, username)
             return Response({"error": {"status": 400, "code": "invalid_credentials", "message": "Incorrect username or password.", "details": None}}, status=400)
         lockout.clear(request, username)
+        if user.is_superuser:
+            two_factor.set_preauth(request, user)
+            target = "accounts:2fa-setup" if not user.totp_confirmed_at else "api:2fa-verify"
+            return Response({"requires_2fa": True, "setup_required": not bool(user.totp_confirmed_at),
+                             "verification_url": request.build_absolute_uri(reverse(target))}, status=status.HTTP_202_ACCEPTED)
         login(request, user)
+        return Response(S.MeSerializer(user).data)
+
+
+class TwoFactorLoginView(APIView):
+    authentication_classes = [CsrfEnforcedNoAuth]
+    permission_classes = []
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+    def post(self, request):
+        user = two_factor.get_preauth_user(request)
+        if not user or not user.totp_confirmed_at:
+            return Response({"error": {"status": 400, "code": "invalid_challenge", "message": "Sign in again to start a valid verification challenge.", "details": None}}, status=400)
+        if two_factor.is_rate_limited(user.pk):
+            return Response({"error": {"status": 429, "code": "locked", "message": "Too many verification attempts. Try again later.", "details": None}}, status=429)
+        method = two_factor.verify_and_consume(user, request.data.get("code"))
+        if not method:
+            return Response({"error": {"status": 400, "code": "invalid_code", "message": "The verification code is invalid or has already been used.", "details": None}}, status=400)
+        two_factor.complete_login(request, user)
+        log_action(user, "security.2fa_verified", user.username, method=method)
         return Response(S.MeSerializer(user).data)
 
 

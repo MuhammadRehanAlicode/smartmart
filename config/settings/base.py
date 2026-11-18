@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+TOTP_ENCRYPTION_KEY = os.environ.get("TOTP_ENCRYPTION_KEY", "") or SECRET_KEY
 DEBUG = False
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
 
@@ -42,6 +43,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.middleware.SuperuserTwoFactorMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -120,14 +122,6 @@ EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "False").lower() == "true"
 EMAIL_USE_SSL = os.environ.get("EMAIL_USE_SSL", "False").lower() == "true"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "webmaster@localhost")
 USE_TAILWIND_CDN = os.environ.get("USE_TAILWIND_CDN", "False") == "True"
-
-# Preview defaults follow the About page design brief. Set verified business figures in the environment before publishing.
-ABOUT_STATS = [
-    {"value": os.environ.get("ABOUT_HAPPY_CUSTOMERS", "10K+"), "label": "Happy Customers", "icon": "users"},
-    {"value": os.environ.get("ABOUT_PRODUCTS_AVAILABLE", "5K+"), "label": "Products Available", "icon": "grid"},
-    {"value": os.environ.get("ABOUT_ON_TIME_DELIVERY", "99%"), "label": "On-Time Delivery", "icon": "truck"},
-    {"value": os.environ.get("ABOUT_FRESH_NATURAL", "100%"), "label": "Fresh & Natural", "icon": "leaf"},
-]
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],  # session + CSRF
